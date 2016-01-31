@@ -12,5 +12,6 @@ public enum TokenKind {
 	,lbrack,rbrack //[]
 	,eot//end of text
 	,err//error
+	,comment
 	;
 }
