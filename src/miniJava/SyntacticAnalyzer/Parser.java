@@ -253,14 +253,14 @@ public class Parser {
 			parseStatement();	
 			}
 			acceptIt();//getting rcurly
-			return;
+			break;
 		case bool:
 			acceptIt();
 			accept(TokenKind.id);
 			accept(TokenKind.equals);
 			parseExpression();
 			accept(TokenKind.semicol);
-			return;
+			break;
 		case ret:
 			acceptIt();
 			if(currentToken.kind!=TokenKind.semicol)parseExpression();
@@ -275,14 +275,14 @@ public class Parser {
 				acceptIt();
 				parseStatement();
 			}
-			return;
+			break;
 		case wile:
 			acceptIt();
 			accept(TokenKind.lparen);
 			parseExpression();
 			accept(TokenKind.rparen);
 			parseStatement();
-			return;
+			break;
 		case thiz:
 			acceptIt();
 			while(currentToken.kind==TokenKind.dot){
@@ -293,18 +293,18 @@ public class Parser {
 				acceptIt();
 				parseExpression();
 				accept(TokenKind.semicol);
-				return;
+				break;
 			}
 			else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?)
 				acceptIt();
 				if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
 				accept(TokenKind.rparen);
 				accept(TokenKind.semicol);
-				return;
+				break;
 			}
 			else {
 				parseError("Expecting term but found "+currentToken);
-				return;
+				break;
 			}
 		case interger:
 			acceptIt();
@@ -316,6 +316,7 @@ public class Parser {
 			accept(TokenKind.equals);
 			parseExpression();
 			accept(TokenKind.semicol);
+			break;
 		case id:	//this one is nasty
 			acceptIt();
 			
@@ -363,14 +364,12 @@ public class Parser {
 				}
 				else {
 					parseError("Expecting term but found "+currentToken);
-					return;
 				}
 				
 			}
 			
 		default:
 			parseError("Expecting term but found "+currentToken);
-			return;
 		}
 		
 			
@@ -380,11 +379,97 @@ public class Parser {
 	
 	/**
 	 * Parses the expression.
+	 *<p><u>Expression</u> ::= <br>
+	 *(<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)* ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *|  <i>id</i> <b>[</b> <u>Expression</u> <b>]</b> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *| (<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)*<b>(</b><u>ArgumentList</u>?<b>)</b> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *| (<i>unop</i>|<i>bunop</i>) <u>Expression</u> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *| <b>(</b><u>Expression</u><b>)</b> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *| <i>num</i> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *| <b>true</b> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)? <br>
+	 *| <b>false</b> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *| <b>new</b> (<i>id</i><b>()</b> | <b>int [</b><u>Expression</u><b>]</b> | <i>id</i> <b>[</b><u>Expression</u><b>]</b>) ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
+	 *|  
 	 *
 	 * @throws SyntaxError the syntax error
 	 */
 	private void parseExpression() throws SyntaxError {
-		
+		switch(currentToken.kind){
+		case num:
+		case tru:
+		case fals:
+			acceptIt();
+			break;
+		case unop:
+		case bunop:
+			acceptIt();
+			parseExpression();
+			break;
+		case lparen:
+			acceptIt();
+			parseExpression();
+			accept(TokenKind.rparen);
+			break;
+		case nu:
+			acceptIt();
+			if(currentToken.kind==TokenKind.interger){ //int[Expression]
+				acceptIt();
+				accept(TokenKind.lbrack);
+				parseExpression();
+				accept(TokenKind.rbrack);
+				break;
+			}
+			else{ //starts with id
+				accept(TokenKind.id);
+				if(currentToken.kind==TokenKind.lparen){
+					acceptIt();
+					accept(TokenKind.rparen);
+					break;
+				}
+				else{
+					accept(TokenKind.lbrack);
+					parseExpression();
+					accept(TokenKind.rbrack);
+					break;
+				}
+			}
+		case thiz:
+			acceptIt();
+			while(currentToken.kind==TokenKind.dot){
+				acceptIt();
+				accept(TokenKind.id);
+			}
+			if(currentToken.kind!=TokenKind.lparen)break;
+			accept(TokenKind.lparen);
+			if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+			accept(TokenKind.rparen);
+			break;
+		case id:
+			acceptIt();
+			if(currentToken.kind==TokenKind.lbrack){//id[Expression]
+				acceptIt();
+				parseExpression();
+				accept(TokenKind.rbrack);
+				break;
+			}
+			while(currentToken.kind==TokenKind.dot){
+				acceptIt();
+				accept(TokenKind.id);
+			}
+			if(currentToken.kind!=TokenKind.lparen)break;
+			accept(TokenKind.lparen);
+			if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+			accept(TokenKind.rparen);
+			break;
+			
+		default:
+			parseError("Expecting term but found "+currentToken);
+		}
+		if(currentToken.kind==TokenKind.binop||currentToken.kind==TokenKind.bunop){
+			acceptIt();
+			parseExpression();
+			return;
+		}
 		
 	}
 	

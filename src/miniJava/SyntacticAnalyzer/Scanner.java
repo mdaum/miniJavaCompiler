@@ -18,7 +18,7 @@ public class Scanner {
 	    public Scanner(InputStream inputStream, ErrorReporter reporter) {
 	        this.inputStream = inputStream;
 	        this.reporter = reporter;
-	        this.position=new Position(0,0);
+	        this.position=new Position();
 	        readChar();//start it off
 	    }
 	    
