@@ -115,7 +115,7 @@ public class Parser {
 					}
 					acceptIt(); //taking rcurly
 				}
-				else parseError("Expected lparen or semicol but found "+currentToken.kind);
+				else parseError("Expected lparen or semicol but found "+currentToken.kind+"\n Postion: "+scanner.position.toString());
 				
 			}
 		}
@@ -165,7 +165,7 @@ public class Parser {
 			return;
 			
 		default: //shouldn't be hit
-			parseError("Expecting term but found " +currentToken.toString());
+			parseError("Expecting term but found " +currentToken.toString()+"\n Postion: "+scanner.position.toString());
 		}
 		
 	}
@@ -212,7 +212,7 @@ public class Parser {
 	private void parseReference() throws SyntaxError {
 		if(currentToken.kind==TokenKind.thiz||currentToken.kind==TokenKind.id){
 			acceptIt();
-		}else parseError("was expecting this or an id and found "+currentToken.toString());
+		}else parseError("was expecting this or an id and found "+currentToken.toString()+"\n Postion: "+scanner.position.toString());
 		while(currentToken.kind==TokenKind.dot){
 			acceptIt();
 			accept(TokenKind.id);
@@ -255,7 +255,126 @@ public class Parser {
 			acceptIt();//getting rcurly
 			return;
 		case bool:
+			acceptIt();
+			accept(TokenKind.id);
+			accept(TokenKind.equals);
+			parseExpression();
+			accept(TokenKind.semicol);
+			return;
+		case ret:
+			acceptIt();
+			if(currentToken.kind!=TokenKind.semicol)parseExpression();
+			accept(TokenKind.semicol);
+		case iff:
+			acceptIt();
+			accept(TokenKind.lparen);
+			parseExpression();
+			accept(TokenKind.rparen);
+			parseStatement();
+			if(currentToken.kind==TokenKind.elsz){
+				acceptIt();
+				parseStatement();
+			}
+			return;
+		case wile:
+			acceptIt();
+			accept(TokenKind.lparen);
+			parseExpression();
+			accept(TokenKind.rparen);
+			parseStatement();
+			return;
+		case thiz:
+			acceptIt();
+			while(currentToken.kind==TokenKind.dot){
+				acceptIt();
+				accept(TokenKind.id);
+			}
+			if(currentToken.kind==TokenKind.equals){ //=Expression;
+				acceptIt();
+				parseExpression();
+				accept(TokenKind.semicol);
+				return;
+			}
+			else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?)
+				acceptIt();
+				if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+				accept(TokenKind.rparen);
+				accept(TokenKind.semicol);
+				return;
+			}
+			else {
+				parseError("Expecting term but found "+currentToken);
+				return;
+			}
+		case interger:
+			acceptIt();
+			if(currentToken.kind==TokenKind.lbrack){
+				acceptIt();
+				accept(TokenKind.rbrack);
+			}
+			accept(TokenKind.id);
+			accept(TokenKind.equals);
+			parseExpression();
+			accept(TokenKind.semicol);
+		case id:	//this one is nasty
+			acceptIt();
+			
+			switch(currentToken.kind){
+			case id:
+				acceptIt();
+				accept(TokenKind.equals);
+				parseExpression();
+				accept(TokenKind.semicol);
+				return;
+			case lbrack:
+				acceptIt();
+				if(currentToken.kind==TokenKind.rbrack){//id[] id = Expression; 
+					acceptIt();
+					accept(TokenKind.id);
+					accept(TokenKind.equals);
+					parseExpression();
+					accept(TokenKind.semicol);
+					return;
+				}
+				//id[Expression]=Expression;
+				parseExpression();
+				accept(TokenKind.rbrack);
+				accept(TokenKind.equals);
+				parseExpression();
+				accept(TokenKind.semicol);
+				return;
+			default://else
+				while(currentToken.kind==TokenKind.dot){
+					acceptIt();
+					accept(TokenKind.id);
+				}
+				if(currentToken.kind==TokenKind.equals){ //=Expression;
+					acceptIt();
+					parseExpression();
+					accept(TokenKind.semicol);
+					return;
+				}
+				else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?)
+					acceptIt();
+					if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+					accept(TokenKind.rparen);
+					accept(TokenKind.semicol);
+					return;
+				}
+				else {
+					parseError("Expecting term but found "+currentToken);
+					return;
+				}
+				
+			}
+			
+		default:
+			parseError("Expecting term but found "+currentToken);
+			return;
 		}
+		
+			
+		
 		
 	}
 	
@@ -291,7 +410,7 @@ public class Parser {
 		}
 		else{
 			parseError("expecting '"+expectedTokenKind+"' but found '" +
-		currentToken.kind+ "'");
+		currentToken.kind+ "'"+"\n Postion: "+scanner.position.toString());
 		}
 	}
 	
@@ -302,7 +421,7 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private void parseError(String e) throws SyntaxError {
-		reporter.reportError("Parse error: "+e);
+		reporter.reportError("Parse error: "+e+"\n Postion: "+scanner.position.toString());
 		throw new SyntaxError();
 	}
 

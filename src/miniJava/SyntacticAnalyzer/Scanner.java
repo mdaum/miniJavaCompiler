@@ -10,7 +10,7 @@ public class Scanner {
 	  	private char currentChar;
 	    private InputStream inputStream;
 	    private ErrorReporter reporter;
-	    private Position position;
+	    public Position position;
 	    private boolean eot = false;
 	    private StringBuilder currentSpelling;
 	    
