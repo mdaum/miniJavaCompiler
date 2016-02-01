@@ -33,15 +33,15 @@ public class Compiler {
 		Parser parser = new Parser(scanner, reporter);
 		
 		System.out.println("Syntactic analysis ... ");
-		//begin scanning-only
+/*	//begin scanning-only
 		Token curr= scanner.scan();
 		while(!curr.kind.equals(TokenKind.eot)&&!curr.kind.equals(TokenKind.err)){
 			System.out.println(curr.toString());
 			curr=scanner.scan();
 		}
 		//end scanning-only
-		
-		//parser.parse();
+*/		
+		parser.parse();
 		System.out.print("Syntactic analysis complete:  ");
 		if (reporter.hasErrors()) {
 			System.out.println("INVALID MiniJava");

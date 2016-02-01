@@ -7,92 +7,303 @@ import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;
 
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Parser.
+ * <p>Note:<br>
+ * bold means terminal<br>
+ * underline means non-terminal<br>
+ * italicized means set of terminals (id and num)
+ */
 public class Parser {
+	
+	/** The scanner. */
 	private Scanner scanner;
+	
+	/** The reporter. */
 	private ErrorReporter reporter;
+	
+	/** The current token. */
 	private Token currentToken;
 
+	/**
+	 * Instantiates a new parser.
+	 *
+	 * @param scanner the scanner
+	 * @param reporter the reporter
+	 */
 	public Parser(Scanner scanner, ErrorReporter reporter) {
 		this.scanner = scanner;
 		this.reporter = reporter;
 	}
+	
+	/**
+	 * The Class SyntaxError.
+	 */
 	class SyntaxError extends Error{
+		
+		/** The Constant serialVersionUID. */
 		private static final long serialVersionUID=1L;
 	}
 	
-	public Expression parse(){
+	/**
+	 * Kicks off Parsing.
+	 */
+	public void parse(){
 		currentToken=scanner.scan();
+		while(currentToken.kind==TokenKind.comment)currentToken=scanner.scan();
 		try{
-			return parseProgram();
+			parseProgram();
 		}
 		catch(SyntaxError e){
-			return null;
 		}
 	}
+	
+	/**
+	 * Parses Program.
+	 * <p>
+	 *	<u>Program</u> ::= (<u>ClassDeclaration</u>)*<b>eot</b> </p>
+	 * @throws SyntaxError the syntax error
+	 */
+	
+	private void parseProgram() throws SyntaxError {
+		while(currentToken.kind!=TokenKind.eot)parseClassDeclaration();
+		accept(TokenKind.eot);
+	}
+	
+	/**
+	 * Parses ClassDeclaration.
+	 *	<p>
+	 *Original: <br><u>ClassDeclaration</u> ::= <b>class </b><i>id</i> <b>{</b> (<u>FieldDeclaration</u>|<u>MethodDeclaration</u>)* <b>}</b></p>
+	 *<p> Note: Got rid of Field Declaration and Method Declaration</p>
+	 *
+	 *<p> New: <br> <u>ClassDeclaration</u> ::= <b>class </b><i>id</i> <b>{</b> (<u>Visibility</u> <u>Access</u>((<u>Type</u> <i>id</i>) | ((<u>Type</u> | <b>void</b>)<i> id</i> <b>(</b> <u>ParameterList</u>? <b>)</b> <b>{</b> <u>Statement</u>* <b>}</b>))* <b>}</b></p>
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseClassDeclaration() throws SyntaxError {
+		accept(TokenKind.clazz);
+		accept(TokenKind.id);
+		accept(TokenKind.lcurly);
+		while(currentToken.kind!=TokenKind.rcurly){
+			parseVisibility();
+			parseAccess();
+			if(currentToken.kind==TokenKind.voyd){//method declaration
+				acceptIt();
+				accept(TokenKind.id);
+				accept(TokenKind.lparen);
+				if(currentToken.kind!=TokenKind.rparen)parseParameterList();
+				accept(TokenKind.rparen);
+				accept(TokenKind.lcurly);
+				while(currentToken.kind!=TokenKind.rcurly){
+					parseStatement();
+				}
+				acceptIt(); //taking rcurly
+			}
+			else{ //don't know yet
+				parseType();
+				accept(TokenKind.id);
+				if(currentToken.kind==TokenKind.semicol){//field declaration
+					acceptIt();
+				}
+				else if(currentToken.kind==TokenKind.lparen){//method declaration
+					acceptIt();
+					if(currentToken.kind!=TokenKind.rparen)parseParameterList();
+					accept(TokenKind.rparen);
+					accept(TokenKind.lcurly);
+					while(currentToken.kind!=TokenKind.rcurly){
+						parseStatement();
+					}
+					acceptIt(); //taking rcurly
+				}
+				else parseError("Expected lparen or semicol but found "+currentToken.kind);
+				
+			}
+		}
+		acceptIt();
+	}
 
-	private Expression parseProgram() throws SyntaxError {
-		
-		return null;
+	
+	/**
+	 * Parses Visibility.
+	 * 
+	 *<p> <u>Visibility</u> ::= (<b>public</b>|<b>private</b>)?</p>
+	 *
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseVisibility() throws SyntaxError {
+		if(currentToken.kind==TokenKind.pub||currentToken.kind==TokenKind.priv)acceptIt();
+	}
+	/**
+	 * Parses Access.
+	 * 
+	 *<p> <u>Access</u> ::= <b>static</b> ?</p>
+	 *
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseAccess() throws SyntaxError {
+		if(currentToken.kind==TokenKind.statik)acceptIt();
+	
 	}
 	
-	private Expression parseClassDeclaration() throws SyntaxError {
+	/**
+	 * Parses Type.
+	 *<p> <u>Type</u> ::= <b>int</b> | <b>boolean</b> | <i>id</i> | (<b>int</b>|<i>id</i>)<b>[]</b>
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseType() throws SyntaxError {
+		switch (currentToken.kind){
+		case bool:
+			acceptIt();
+			return;
+		case interger:
+		case id:
+			acceptIt();
+			if(currentToken.kind==TokenKind.lbrack){
+			acceptIt();
+			accept(TokenKind.rbrack);
+			}
+			return;
+			
+		default: //shouldn't be hit
+			parseError("Expecting term but found " +currentToken.toString());
+		}
 		
-		return null;
 	}
 	
-	private Expression parseFieldDeclaration() throws SyntaxError {
-		
-		return null;
+	/**
+	 * Parses ParameterList.
+	 *<p><u>ParameterList</u> ::= <u>Type</u> <i>id</i> (<b>,</b> <u>Type</u> <i>id</i>)*</p>
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseParameterList() throws SyntaxError {
+		parseType();
+		accept(TokenKind.id);
+		while(currentToken.kind==TokenKind.comma){
+			acceptIt();
+			parseType();
+			accept(TokenKind.id);
+		}
 	}
 	
-	private Expression parseMethodDeclaration() throws SyntaxError {
+	/**
+	 * Parses ArgumentList.
+	 * <p> <u>ArgumentList</u> ::= <u>Expression</u> (<b>,</b><u>Expression</u>)*<p>
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseArgumentList() throws SyntaxError {
+		parseExpression();
+		while(currentToken.kind==TokenKind.comma){
+			acceptIt();
+			parseExpression();
+		}
 		
-		return null;
 	}
 	
-	private Expression parseVisibility() throws SyntaxError {
+	/**
+	 * Parses Reference.
+	 * <p>Note: requires refactor due to left recursion<p>
+	 * <p>Original:<br>
+	 * <u> Reference</u> ::= <u>Reference</u> <b>.</b> <i>id</i> | (<b>this</b> | <i>id</i>)
+	 *</p>
+	 *<p> New: <br>
+	 *<u>Reference</u> ::= (<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)*</p>
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseReference() throws SyntaxError {
+		if(currentToken.kind==TokenKind.thiz||currentToken.kind==TokenKind.id){
+			acceptIt();
+		}else parseError("was expecting this or an id and found "+currentToken.toString());
+		while(currentToken.kind==TokenKind.dot){
+			acceptIt();
+			accept(TokenKind.id);
+		}
 		
-		return null;
 	}
 	
-	private Expression parseAccess() throws SyntaxError {
-		
-		return null;
+	/**
+	 * Parses the array reference.
+	 *<p><u>ArrayReference</u> ::= <i>id</i> <b>[</b> <u>Expression</u> <b>]</b></p>
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseArrayReference() throws SyntaxError {
+		accept(TokenKind.id);
+		accept(TokenKind.lbrack);
+		parseExpression();
+		accept(TokenKind.rbrack);
 	}
 	
-	private Expression parseType() throws SyntaxError {
+	/**
+	 * Parses the Statement.
+	 *<p><u>Statement</u> ::=<br> <b>{</b><u>Statement</u>*<b>}</b><br>
+	 *| <b>int</b> | <b>boolean</b> | <i>id</i> | (<b>int</b>|<i>id</i>)<b>[]</b> <i>id</i> <b>=</b> <u>Expression</u><b>;</b><br>
+	 *| (<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)* <b>=</b> <u>Expression</u><b>;</b><br>
+	 *|  <i>id</i> <b>[</b> <u>Expression</u> <b>] =</b> <u>Expression</u><b>;</b><br>
+	 *| (<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)*<b> (</b><u>ArgumentList</u>?<b>);</b><br>
+	 *| <b>return</b> <u>Expression</u>?<b>;</b><br>
+	 *| <b>if (</b><u>Expression</u><b>)</b> <u>Statement</u> (<b>else</b> <u>Statement</u>)?<br>
+	 *| <b>while (</b><u>Expression</u><b>)</b> <u>Statement</u></p>
+	 *
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseStatement() throws SyntaxError {
+		switch(currentToken.kind){
+		case lcurly:
+			acceptIt();
+			while(currentToken.kind!=TokenKind.rcurly){
+			parseStatement();	
+			}
+			acceptIt();//getting rcurly
+			return;
+		case bool:
+		}
 		
-		return null;
 	}
 	
-	private Expression parseParameterList() throws SyntaxError {
+	/**
+	 * Parses the expression.
+	 *
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseExpression() throws SyntaxError {
 		
-		return null;
+		
 	}
 	
-	private Expression parseArgumentList() throws SyntaxError {
-		
-		return null;
+	/**
+	 * Accept it (unconditional)
+	 *
+	 * @throws SyntaxError the syntax error
+	 */
+	private void acceptIt() throws SyntaxError{
+		accept(currentToken.kind);
 	}
 	
-	private Expression parseReference() throws SyntaxError {
-		
-		return null;
+	/**
+	 * Accept.
+	 *
+	 * @param expectedTokenKind the expected token kind
+	 * @throws SyntaxError the syntax error
+	 */
+	private void accept(TokenKind expectedTokenKind) throws SyntaxError{
+		if(currentToken.kind==expectedTokenKind){
+			currentToken=scanner.scan();
+			while(currentToken.kind==TokenKind.comment)currentToken=scanner.scan();
+		}
+		else{
+			parseError("expecting '"+expectedTokenKind+"' but found '" +
+		currentToken.kind+ "'");
+		}
 	}
 	
-	private Expression parseArrayReference() throws SyntaxError {
-		
-		return null;
+	/**
+	 * Parses the error.
+	 *
+	 * @param e the e
+	 * @throws SyntaxError the syntax error
+	 */
+	private void parseError(String e) throws SyntaxError {
+		reporter.reportError("Parse error: "+e);
+		throw new SyntaxError();
 	}
-	
-	private Expression Statement() throws SyntaxError {
-		
-		return null;
-	}
-	
-	private Expression parseExpression() throws SyntaxError {
-		
-		return null;
-	}
-	
+
 }
