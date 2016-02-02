@@ -33,6 +33,7 @@ public class Scanner {
 	    }
 	    
 	    private TokenKind scanToken(){ //using a comment token for now instead of looping, might want to change later
+	    	if(eot)return TokenKind.eot;
 	    	switch(currentChar){
 	    	
 	    	case '/': //comments handled here too....

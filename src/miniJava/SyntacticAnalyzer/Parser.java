@@ -265,6 +265,7 @@ public class Parser {
 			acceptIt();
 			if(currentToken.kind!=TokenKind.semicol)parseExpression();
 			accept(TokenKind.semicol);
+			break;
 		case iff:
 			acceptIt();
 			accept(TokenKind.lparen);
