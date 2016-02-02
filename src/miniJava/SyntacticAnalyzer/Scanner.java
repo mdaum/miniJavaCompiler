@@ -51,11 +51,12 @@ public class Scanner {
 	    		else if(currentChar=='*'){
 	    			//clearing
 	    			currentSpelling.deleteCharAt(0);
-	    			while(true){
+	    			while(!eot){
 	    				if(currentChar=='*')skipIt();
 	    				if(currentChar=='/')break;
 	    				skipIt();
 	    			}
+	    			if(eot)scanError("unfinished block comment");
 	    			skipIt();//getting rid of / after *
 	    			while(isWhiteSpace(currentChar)){
 	    				skipIt();

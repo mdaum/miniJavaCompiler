@@ -97,7 +97,7 @@ public class Parser {
 				while(currentToken.kind!=TokenKind.rcurly){
 					parseStatement();
 				}
-				acceptIt(); //taking rcurly
+				accept(TokenKind.rcurly); //taking rcurly
 			}
 			else{ //don't know yet
 				parseType();
@@ -154,7 +154,7 @@ public class Parser {
 		switch (currentToken.kind){
 		case bool:
 			acceptIt();
-			return;
+			break;
 		case interger:
 		case id:
 			acceptIt();
@@ -162,10 +162,10 @@ public class Parser {
 			acceptIt();
 			accept(TokenKind.rbrack);
 			}
-			return;
+			break;
 			
 		default: //shouldn't be hit
-			parseError("Expecting term but found " +currentToken.toString()+"\n Postion: "+scanner.position.toString());
+			parseError("Expecting type but found " +currentToken.toString()+"\n Postion: "+scanner.position.toString());
 		}
 		
 	}
