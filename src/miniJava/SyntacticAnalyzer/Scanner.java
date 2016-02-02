@@ -52,9 +52,11 @@ public class Scanner {
 	    			//clearing
 	    			currentSpelling.deleteCharAt(0);
 	    			while(!eot){
-	    				if(currentChar=='*')skipIt();
-	    				if(currentChar=='/')break;
+	    				if(currentChar=='*'){
 	    				skipIt();
+	    				if(currentChar=='/')break;
+	    				}
+	    				if(currentChar!='*')skipIt();
 	    			}
 	    			if(eot)scanError("unfinished block comment");
 	    			skipIt();//getting rid of / after *
