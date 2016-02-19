@@ -496,7 +496,7 @@ public class Parser {
 		}
 		else{
 			parseError("expecting '"+expectedTokenKind+"' but found '" +
-		currentToken.kind+ "'"+"\n Postion: "+scanner.position.toString());
+		currentToken.kind+ "'");
 		}
 	}
 	

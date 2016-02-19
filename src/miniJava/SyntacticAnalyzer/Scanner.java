@@ -5,20 +5,22 @@ import java.io.InputStream;
 
 import miniJava.ErrorReporter;
 //test
+import miniJava.SyntacticAnalyzer.Parser.SyntaxError;
 
 public class Scanner {
 	  	private char currentChar;
 	    private InputStream inputStream;
 	    private ErrorReporter reporter;
-	    public Position position;
+	    public SourcePosition position;
 	    private boolean eot = false;
 	    private StringBuilder currentSpelling;
+	    private Parser p;
 	    
 	    
 	    public Scanner(InputStream inputStream, ErrorReporter reporter) {
 	        this.inputStream = inputStream;
 	        this.reporter = reporter;
-	        this.position=new Position();
+	        this.position=new SourcePosition();
 	        readChar();//start it off
 	    }
 	    
@@ -29,7 +31,7 @@ public class Scanner {
 	    	}
 	    	currentSpelling=new StringBuilder();
 	    	TokenKind kind = scanToken();
-	    	return new Token(kind,currentSpelling.toString()); //placeholder
+	    	return new Token(kind,currentSpelling.toString(),this.position); //placeholder
 	    }
 	    
 	    private TokenKind scanToken(){ //using a comment token for now instead of looping, might want to change later
@@ -42,6 +44,7 @@ public class Scanner {
 	    			//clearing spelling
 	    			currentSpelling.deleteCharAt(0);
 	    			while(!isNewLine(currentChar)){
+	    				if(eot)return TokenKind.eot;
 	    				skipIt();
 	    			}
 	    			while(isWhiteSpace(currentChar)){ //get rid of spaces after comment
@@ -51,6 +54,7 @@ public class Scanner {
 	    		else if(currentChar=='*'){
 	    			//clearing
 	    			currentSpelling.deleteCharAt(0);
+	    			skipIt();
 	    			while(!eot){
 	    				if(currentChar=='*'){
 	    				skipIt();
@@ -110,6 +114,7 @@ public class Scanner {
 	    	
 	    	case '-':
 	    		takeIt();
+	    		if(currentChar=='-')parseError("-- is not a valid operator");
 	    		return TokenKind.bunop;
 	    		
 	    	case '=': //either binop or assignment
@@ -245,4 +250,16 @@ public class Scanner {
 	    private boolean isWhiteSpace(char c){
 	    	return (c == ' ' || c == '\t' || isNewLine(c));
 	    }
+	    public void parseError(String e) throws SyntaxError {
+			reporter.reportError("Parse error: "+e+"\n Postion: "+this.position.toString());
+			throw new SyntaxError();
+		}
+		/**
+		 * The Class SyntaxError.
+		 */
+		class SyntaxError extends Error{
+			
+			/** The Constant serialVersionUID. */
+			private static final long serialVersionUID=1L;
+		}
 }
