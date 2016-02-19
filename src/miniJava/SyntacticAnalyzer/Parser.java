@@ -99,7 +99,7 @@ public class Parser {
 			boolean isAccess=parseAccess();
 			Type t = null;
 			String name;
-			ParameterDeclList params= new ParameterDeclList();
+			ParameterDeclList params;
 			StatementList statements = new StatementList();
 			if(currentToken.kind==TokenKind.voyd){//method declaration
 				t= new BaseType(TypeKind.VOID,scanner.position); //save off void type
@@ -108,7 +108,7 @@ public class Parser {
 				accept(TokenKind.id);
 				accept(TokenKind.lparen);
 				if(currentToken.kind!=TokenKind.rparen){
-					params.add(parseParameterList()); //get params
+					params=parseParameterList(); //get param list
 				}
 				accept(TokenKind.rparen);
 				accept(TokenKind.lcurly);
@@ -132,7 +132,7 @@ public class Parser {
 				else if(currentToken.kind==TokenKind.lparen){//method declaration
 					acceptIt();
 					if(currentToken.kind!=TokenKind.rparen){
-						params.add(parseParameterList());
+						params=parseParameterList();
 					}
 					accept(TokenKind.rparen);
 					accept(TokenKind.lcurly);
@@ -220,14 +220,16 @@ public class Parser {
 	 *<p><u>ParameterList</u> ::= <u>Type</u> <i>id</i> (<b>,</b> <u>Type</u> <i>id</i>)*</p>
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseParameterList() throws SyntaxError {
-		parseType();
+	private ParameterDeclList parseParameterList() throws SyntaxError {
+		ParameterDeclList toReturn=new ParameterDeclList();
+		toReturn.add(new ParameterDecl(parseType(),currentToken.spelling,scanner.position));//grabbing first param...
 		accept(TokenKind.id);
 		while(currentToken.kind==TokenKind.comma){
 			acceptIt();
-			parseType();
+			toReturn.add(new ParameterDecl(parseType(),currentToken.spelling,scanner.position)); //grabbing rest if exists
 			accept(TokenKind.id);
 		}
+		return toReturn;
 	}
 	
 	/**
@@ -235,12 +237,14 @@ public class Parser {
 	 * <p> <u>ArgumentList</u> ::= <u>Expression</u> (<b>,</b><u>Expression</u>)*<p>
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseArgumentList() throws SyntaxError {
-		parseExpression();
+	private ExprList parseArgumentList() throws SyntaxError {
+		ExprList toReturn= new ExprList();
+		ExprList.add(parseExpression());
 		while(currentToken.kind==TokenKind.comma){
 			acceptIt();
-			parseExpression();
+			ExprList.add(parseExpression());
 		}
+		return toReturn;
 		
 	}
 	
