@@ -1,0 +1,280 @@
+Enter Expression
+class test{public int space;public int jam; public static boolean bball;
+public static void main(String[] args){
+	//Statement*
+	space=1;
+	jam=(2+(0+999));
+	s =new Object(super,science);
+	s.setColor(ColorSpecial.PASTEL_GREEN);
+	fus;
+	int[]goo,foo[]love;
+	this.bball=true;
+	int slam=-322;
+	boolean welcome = bball && (true || false) && !bball;
+	bball= 5>3 && 2<1919 || 700!=6 || jam>=space;
+	if(bball) return;
+}
+private boolean shutUpAndJam(int body,randomTypeID nobody,boolean sandwich){
+	if(nobody.randomProperty<=7) return;
+	else{
+		shutUpAndJam((3/1),nobody,false);
+		shutUpAndJam(8/77,nobody,true);
+		nonExistingArray[-12] = nonExistingArray[body];
+	}
+	else{}wfeoi int goo
+}
+public int[] justJAM(){
+	//Statement*
+	{
+		{
+			while(true==false)
+			{
+				return justJAM();
+			}
+		}
+		/**
+		I put 3 curly-bracket bodies in here
+		**/
+		{int[] charles____barkley=new int[space];}
+		{//
+		if(bball)jam=2;else jam.slam.arbitraryNonExistentID=false;
+		}
+	}
+	return new int[3];
+	return new someUnnamedMethodID();
+}
+}Syntactic analysis ... 
+class is a clazz
+test is a id
+{ is a lcurly
+public is a pub
+int is a interger
+space is a id
+; is a semicol
+public is a pub
+int is a interger
+jam is a id
+; is a semicol
+public is a pub
+static is a statik
+boolean is a bool
+bball is a id
+; is a semicol
+public is a pub
+static is a statik
+void is a voyd
+main is a id
+( is a lparen
+String is a id
+[ is a lbrack
+] is a rbrack
+args is a id
+) is a rparen
+{ is a lcurly
+ is a comment
+space is a id
+= is a equals
+1 is a num
+; is a semicol
+jam is a id
+= is a equals
+( is a lparen
+2 is a num
++ is a binop
+( is a lparen
+0 is a num
++ is a binop
+999 is a num
+) is a rparen
+) is a rparen
+; is a semicol
+this is a thiz
+. is a dot
+bball is a id
+= is a equals
+true is a tru
+; is a semicol
+int is a interger
+slam is a id
+= is a equals
+- is a bunop
+322 is a num
+; is a semicol
+boolean is a bool
+welcome is a id
+= is a equals
+bball is a id
+&& is a binop
+( is a lparen
+true is a tru
+|| is a binop
+false is a fals
+) is a rparen
+&& is a binop
+! is a unop
+bball is a id
+; is a semicol
+bball is a id
+= is a equals
+5 is a num
+> is a binop
+3 is a num
+&& is a binop
+2 is a num
+< is a binop
+1919 is a num
+|| is a binop
+700 is a num
+!= is a binop
+6 is a num
+|| is a binop
+jam is a id
+>= is a binop
+space is a id
+; is a semicol
+if is a iff
+( is a lparen
+bball is a id
+) is a rparen
+return is a ret
+; is a semicol
+} is a rcurly
+private is a priv
+boolean is a bool
+shutUpAndJam is a id
+( is a lparen
+int is a interger
+body is a id
+, is a comma
+randomTypeID is a id
+nobody is a id
+, is a comma
+boolean is a bool
+sandwich is a id
+) is a rparen
+{ is a lcurly
+if is a iff
+( is a lparen
+nobody is a id
+. is a dot
+randomProperty is a id
+<= is a binop
+7 is a num
+) is a rparen
+return is a ret
+; is a semicol
+else is a elsz
+{ is a lcurly
+shutUpAndJam is a id
+( is a lparen
+( is a lparen
+3 is a num
+/ is a binop
+1 is a num
+) is a rparen
+, is a comma
+nobody is a id
+, is a comma
+false is a fals
+) is a rparen
+; is a semicol
+shutUpAndJam is a id
+( is a lparen
+8 is a num
+/ is a binop
+77 is a num
+, is a comma
+nobody is a id
+, is a comma
+true is a tru
+) is a rparen
+; is a semicol
+nonExistingArray is a id
+[ is a lbrack
+- is a bunop
+12 is a num
+] is a rbrack
+= is a equals
+nonExistingArray is a id
+[ is a lbrack
+body is a id
+] is a rbrack
+; is a semicol
+} is a rcurly
+} is a rcurly
+public is a pub
+int is a interger
+[ is a lbrack
+] is a rbrack
+justJAM is a id
+( is a lparen
+) is a rparen
+{ is a lcurly
+ is a comment
+{ is a lcurly
+{ is a lcurly
+while is a wile
+( is a lparen
+true is a tru
+== is a binop
+false is a fals
+) is a rparen
+{ is a lcurly
+return is a ret
+justJAM is a id
+( is a lparen
+) is a rparen
+; is a semicol
+} is a rcurly
+} is a rcurly
+ is a comment
+{ is a lcurly
+int is a interger
+[ is a lbrack
+] is a rbrack
+charles____barkley is a id
+= is a equals
+new is a nu
+int is a interger
+[ is a lbrack
+space is a id
+] is a rbrack
+; is a semicol
+} is a rcurly
+{ is a lcurly
+ is a comment
+if is a iff
+( is a lparen
+bball is a id
+) is a rparen
+jam is a id
+= is a equals
+2 is a num
+; is a semicol
+else is a elsz
+jam is a id
+. is a dot
+slam is a id
+. is a dot
+arbitraryNonExistentID is a id
+= is a equals
+false is a fals
+; is a semicol
+} is a rcurly
+} is a rcurly
+return is a ret
+new is a nu
+int is a interger
+[ is a lbrack
+3 is a num
+] is a rbrack
+; is a semicol
+return is a ret
+new is a nu
+someUnnamedMethodID is a id
+( is a lparen
+) is a rparen
+; is a semicol
+} is a rcurly
+
+} is a rcurly

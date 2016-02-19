@@ -3,6 +3,8 @@ package miniJava.SyntacticAnalyzer;
 import java.beans.Expression;
 
 import miniJava.ErrorReporter;
+import miniJava.AbstractSyntaxTrees.*;
+import miniJava.AbstractSyntaxTrees.Package;
 import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;
 
@@ -67,8 +69,12 @@ public class Parser {
 	 */
 	
 	private void parseProgram() throws SyntaxError {
-		while(currentToken.kind!=TokenKind.eot)parseClassDeclaration();
+		ClassDeclList c= new ClassDeclList();
+		while(currentToken.kind!=TokenKind.eot){
+			c.add(parseClassDeclaration());
+		}
 		accept(TokenKind.eot);
+		Package p= new Package(c,scanner.position);
 	}
 	
 	/**
@@ -80,38 +86,58 @@ public class Parser {
 	 *<p> New: <br> <u>ClassDeclaration</u> ::= <b>class </b><i>id</i> <b>{</b> (<u>Visibility</u> <u>Access</u>((<u>Type</u> <i>id</i>) | ((<u>Type</u> | <b>void</b>)<i> id</i> <b>(</b> <u>ParameterList</u>? <b>)</b> <b>{</b> <u>Statement</u>* <b>}</b>))* <b>}</b></p>
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseClassDeclaration() throws SyntaxError {
+	private ClassDecl parseClassDeclaration() throws SyntaxError {
 		accept(TokenKind.clazz);
+		String cn;
+		cn=currentToken.spelling;//classname
 		accept(TokenKind.id);
 		accept(TokenKind.lcurly);
-		while(currentToken.kind!=TokenKind.rcurly){
-			parseVisibility();
-			parseAccess();
+		FieldDeclList fdl = new FieldDeclList();
+		MethodDeclList mdl = new MethodDeclList(); //now have to make sure I am grabbing pieces for each and see which one it is...make sure I check method signiatures of MethodDecl and FieldDecl...
+		while(currentToken.kind!=TokenKind.rcurly){ // constructing MemberDecl first...
+			boolean isVis=parseVisibility();//laying out all i need for either field or method decl
+			boolean isAccess=parseAccess();
+			Type t = null;
+			String name;
+			ParameterDeclList params= new ParameterDeclList();
+			StatementList statements = new StatementList();
 			if(currentToken.kind==TokenKind.voyd){//method declaration
+				t= new BaseType(TypeKind.VOID,scanner.position); //save off void type
 				acceptIt();
+				name=currentToken.spelling; //save off name
 				accept(TokenKind.id);
 				accept(TokenKind.lparen);
-				if(currentToken.kind!=TokenKind.rparen)parseParameterList();
+				if(currentToken.kind!=TokenKind.rparen){
+					params.add(parseParameterList()); //get params
+				}
 				accept(TokenKind.rparen);
 				accept(TokenKind.lcurly);
 				while(currentToken.kind!=TokenKind.rcurly){
-					parseStatement();
+					statements.add(parseStatement());
 				}
 				accept(TokenKind.rcurly); //taking rcurly
+				MemberDecl member = new FieldDecl(isVis,isAccess,t,name,scanner.position);
+				MethodDecl method = new MethodDecl(member, params, statements, scanner.position);
+				mdl.add(method);
 			}
 			else{ //don't know yet
-				parseType();
+				t=parseType();
+				name=currentToken.spelling;
 				accept(TokenKind.id);
 				if(currentToken.kind==TokenKind.semicol){//field declaration
+					FieldDecl field= new FieldDecl(isVis,isAccess,t,name,scanner.position);
+					fdl.add(field);
 					acceptIt();
 				}
 				else if(currentToken.kind==TokenKind.lparen){//method declaration
 					acceptIt();
-					if(currentToken.kind!=TokenKind.rparen)parseParameterList();
+					if(currentToken.kind!=TokenKind.rparen){
+						params.add(parseParameterList());
+					}
 					accept(TokenKind.rparen);
 					accept(TokenKind.lcurly);
 					while(currentToken.kind!=TokenKind.rcurly){
-						parseStatement();
+						statements.add(parseStatement());
 					}
 					acceptIt(); //taking rcurly
 				}
@@ -119,7 +145,8 @@ public class Parser {
 				
 			}
 		}
-		acceptIt();
+		acceptIt();  //accepting last rcurly
+		ClassDecl c = new ClassDecl(cn, fdl, mdl, scanner.position);
 	}
 
 	
@@ -127,21 +154,31 @@ public class Parser {
 	 * Parses Visibility.
 	 * 
 	 *<p> <u>Visibility</u> ::= (<b>public</b>|<b>private</b>)?</p>
-	 *
+	 *if it isprivate, return true, else false, will consume any pub or priv tokens
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseVisibility() throws SyntaxError {
-		if(currentToken.kind==TokenKind.pub||currentToken.kind==TokenKind.priv)acceptIt();
+	private boolean parseVisibility() throws SyntaxError {
+		
+				
+		if(currentToken.kind==TokenKind.priv){
+			acceptIt();
+			return true;
+		}
+		if(currentToken.kind==TokenKind.pub)acceptIt();
+			return false;
 	}
 	/**
 	 * Parses Access.
 	 * 
 	 *<p> <u>Access</u> ::= <b>static</b> ?</p>
-	 *
+	 * if kind is static return true else false
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseAccess() throws SyntaxError {
-		if(currentToken.kind==TokenKind.statik)acceptIt();
+	private boolean parseAccess() throws SyntaxError {
+		if(currentToken.kind==TokenKind.statik){
+			acceptIt();
+			return true;
+		}return false;
 	
 	}
 	
@@ -150,7 +187,7 @@ public class Parser {
 	 *<p> <u>Type</u> ::= <b>int</b> | <b>boolean</b> | <i>id</i> | (<b>int</b>|<i>id</i>)<b>[]</b>
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseType() throws SyntaxError {
+	private Type parseType() throws SyntaxError {
 		switch (currentToken.kind){
 		case bool:
 			acceptIt();
