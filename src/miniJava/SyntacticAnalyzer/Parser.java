@@ -9,7 +9,7 @@ import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;
 
 
-// TODO: Auto-generated Javadoc
+
 /**
  * The Class Parser.
  * <p>Note:<br>
@@ -93,7 +93,7 @@ public class Parser {
 		accept(TokenKind.id);
 		accept(TokenKind.lcurly);
 		FieldDeclList fdl = new FieldDeclList();
-		MethodDeclList mdl = new MethodDeclList(); //now have to make sure I am grabbing pieces for each and see which one it is...make sure I check method signiatures of MethodDecl and FieldDecl...
+		MethodDeclList mdl = new MethodDeclList(); 
 		while(currentToken.kind!=TokenKind.rcurly){ // constructing MemberDecl first...
 			boolean isVis=parseVisibility();//laying out all i need for either field or method decl
 			boolean isAccess=parseAccess();
@@ -187,22 +187,30 @@ public class Parser {
 	 *<p> <u>Type</u> ::= <b>int</b> | <b>boolean</b> | <i>id</i> | (<b>int</b>|<i>id</i>)<b>[]</b>
 	 * @throws SyntaxError the syntax error
 	 */
-	private Type parseType() throws SyntaxError {
+	private Type parseType() throws SyntaxError { //where I left off
 		switch (currentToken.kind){
 		case bool:
 			acceptIt();
-			break;
+			return new BaseType(TypeKind.BOOLEAN,scanner.position);
 		case interger:
 		case id:
+			Type temp; //making sure to grab potential element type
+			if(currentToken.kind==TokenKind.interger){
+				temp=new BaseType(TypeKind.INT,scanner.position);
+			}
+			else  temp = new ClassType(new Identifier(currentToken),scanner.position);
 			acceptIt();
 			if(currentToken.kind==TokenKind.lbrack){
 			acceptIt();
 			accept(TokenKind.rbrack);
+			return new ArrayType(temp,scanner.position);
 			}
-			break;
+			return temp;
+		
 			
 		default: //shouldn't be hit
 			parseError("Expecting type but found " +currentToken.toString()+"\n Postion: "+scanner.position.toString());
+			return new BaseType(TypeKind.ERROR,scanner.position);
 		}
 		
 	}
