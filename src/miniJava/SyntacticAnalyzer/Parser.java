@@ -99,7 +99,7 @@ public class Parser {
 			boolean isAccess=parseAccess();
 			Type t = null;
 			String name;
-			ParameterDeclList params;
+			ParameterDeclList params=null;
 			StatementList statements = new StatementList();
 			if(currentToken.kind==TokenKind.voyd){//method declaration
 				t= new BaseType(TypeKind.VOID,scanner.position); //save off void type
@@ -147,6 +147,7 @@ public class Parser {
 		}
 		acceptIt();  //accepting last rcurly
 		ClassDecl c = new ClassDecl(cn, fdl, mdl, scanner.position);
+		return c;
 	}
 
 	
@@ -239,10 +240,10 @@ public class Parser {
 	 */
 	private ExprList parseArgumentList() throws SyntaxError {
 		ExprList toReturn= new ExprList();
-		ExprList.add(parseExpression());
+		toReturn.add(parseExpression());
 		while(currentToken.kind==TokenKind.comma){
 			acceptIt();
-			ExprList.add(parseExpression());
+			toReturn.add(parseExpression());
 		}
 		return toReturn;
 		
@@ -302,132 +303,166 @@ public class Parser {
 	 *
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseStatement() throws SyntaxError {
+	private Statement parseStatement() throws SyntaxError {
 		switch(currentToken.kind){
-		case lcurly:
+		case lcurly: //block statement
 			acceptIt();
+			StatementList sllcurly = new StatementList();
 			while(currentToken.kind!=TokenKind.rcurly){
-			parseStatement();	
+			sllcurly.add(parseStatement());	
 			}
 			acceptIt();//getting rcurly
-			break;
-		case bool:
+			return new BlockStmt(sllcurly,scanner.position);
+		case bool: // vardecl statement
 			acceptIt();
+			VarDecl vdbool = new VarDecl(new BaseType(TypeKind.BOOLEAN,scanner.position),currentToken.spelling,scanner.position);
 			accept(TokenKind.id);
 			accept(TokenKind.equals);
-			parseExpression();
+			Expression ebool = parseExpression();
 			accept(TokenKind.semicol);
-			break;
-		case ret:
+			return new VarDeclStmt(vdbool,ebool,scanner.position);
+		case ret: //return statement COME BACK....
 			acceptIt();
-			if(currentToken.kind!=TokenKind.semicol)parseExpression();
+			Expression eret = null;
+			boolean haseret=false;
+			if(currentToken.kind!=TokenKind.semicol){
+				eret=parseExpression();
+				haseret=true;
+			}
 			accept(TokenKind.semicol);
-			break;
-		case iff:
+			return new ReturnStmt(eret,scanner.position);
+		case iff: //IfStmt
 			acceptIt();
 			accept(TokenKind.lparen);
-			parseExpression();
+			Expression eiff = parseExpression();
 			accept(TokenKind.rparen);
-			parseStatement();
+			Statement s0iff =parseStatement();
 			if(currentToken.kind==TokenKind.elsz){
 				acceptIt();
-				parseStatement();
+				Statement s1iff=parseStatement();
+				return new IfStmt(eiff,s0iff,s1iff,scanner.position);
 			}
-			break;
-		case wile:
+			return new IfStmt(eiff,s0iff,scanner.position);
+		case wile: //while statement
 			acceptIt();
 			accept(TokenKind.lparen);
-			parseExpression();
+			Expression ewile=parseExpression();
 			accept(TokenKind.rparen);
-			parseStatement();
-			break;
-		case thiz:
+			Statement swile=parseStatement();
+			return new WhileStmt(ewile,swile,scanner.position);
+		case thiz: //either assignStmt or CallStmt
 			acceptIt();
+			Reference rootthiz = new ThisRef(scanner.position); //will always start with reference
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
+				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken),scanner.position);
 				accept(TokenKind.id);
 			}
-			if(currentToken.kind==TokenKind.equals){ //=Expression;
+			//now I have full reference made
+			if(currentToken.kind==TokenKind.equals){ //=Expression; ie assignStmt
 				acceptIt();
-				parseExpression();
+				Expression ethiz =parseExpression();
 				accept(TokenKind.semicol);
-				break;
+				return new AssignStmt(rootthiz,ethiz,scanner.position);
 			}
-			else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?)
+			else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?) ie callStmt
 				acceptIt();
-				if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+				ExprList elthiz = new ExprList();
+				if(currentToken.kind!=TokenKind.rparen){
+					elthiz=parseArgumentList();
+				}
 				accept(TokenKind.rparen);
 				accept(TokenKind.semicol);
-				break;
+				return new CallStmt(rootthiz,elthiz,scanner.position);
 			}
 			else {
 				parseError("Expecting term but found "+currentToken);
-				break;
+				return null; //don't care about tree anymore...
 			}
-		case interger:
+		case interger: //VarDeclStmt
 			acceptIt();
+			Type tinterger;
 			if(currentToken.kind==TokenKind.lbrack){
 				acceptIt();
 				accept(TokenKind.rbrack);
+				tinterger=new ArrayType(new BaseType(TypeKind.INT,scanner.position),scanner.position);
 			}
+			else {tinterger=new BaseType(TypeKind.INT,scanner.position);}
+			VarDecl vdinterger=new VarDecl(tinterger,currentToken.spelling,scanner.position);
 			accept(TokenKind.id);
 			accept(TokenKind.equals);
-			parseExpression();
+			Expression einterger=parseExpression();
 			accept(TokenKind.semicol);
-			break;
-		case id:	//this one is nasty
+			return new VarDeclStmt(vdinterger,einterger,scanner.position);
+		case id://this one is nasty		can be varDeclStmt,assignStmt,IxAssignStmt,or CallStmt
+			Token idroot = currentToken;
 			acceptIt();
 			
 			switch(currentToken.kind){
-			case id:
+			case id: //varDeclStmt
+				Type tidid=new ClassType(new Identifier(idroot),scanner.position);
+				VarDecl vdidid=new VarDecl(tidid,currentToken.spelling,scanner.position);
 				acceptIt();
 				accept(TokenKind.equals);
-				parseExpression();
+				Expression eidid=parseExpression();
 				accept(TokenKind.semicol);
-				return;
-			case lbrack:
+				return new VarDeclStmt(vdidid,eidid,scanner.position);
+			case lbrack://either varDeclStmt with arrayType, or IxAssignStmt
 				acceptIt();
-				if(currentToken.kind==TokenKind.rbrack){//id[] id = Expression; 
+				Type tidlbrack;
+				if(currentToken.kind==TokenKind.rbrack){//id[] id = Expression; we now know it is varDeclStmt
 					acceptIt();
+					tidlbrack=new ArrayType(new ClassType(new Identifier(idroot),scanner.position),scanner.position);
+					VarDecl vdidlbrack=new VarDecl(tidlbrack,currentToken.spelling,scanner.position);
 					accept(TokenKind.id);
 					accept(TokenKind.equals);
-					parseExpression();
+					Expression eidlbrack=parseExpression();
 					accept(TokenKind.semicol);
-					return;
+					return new VarDeclStmt(vdidlbrack,eidlbrack,scanner.position);
 				}
-				//id[Expression]=Expression;
-				parseExpression();
+				//id[Expression]=Expression; we now know this is IxAssignStmt
+				IdRef idridlbrack=new IdRef(new Identifier(idroot),scanner.position);
+				Expression eidlbrack=parseExpression();
+				IndexedRef iridlbrack=new IndexedRef(idridlbrack,eidlbrack,scanner.position);
 				accept(TokenKind.rbrack);
 				accept(TokenKind.equals);
-				parseExpression();
+				Expression eidlbrack2=parseExpression();
 				accept(TokenKind.semicol);
-				return;
-			default://else
+				return new IxAssignStmt(iridlbrack,eidlbrack2,scanner.position);
+			default://else could be assignStmt, CallStmt
+				Reference rootid=new IdRef(new Identifier(idroot),scanner.position);
 				while(currentToken.kind==TokenKind.dot){
 					acceptIt();
+					rootid=new QualifiedRef(rootid,new Identifier(currentToken),scanner.position);
 					accept(TokenKind.id);
 				}
-				if(currentToken.kind==TokenKind.equals){ //=Expression;
+				//now have full reference in rootid
+				if(currentToken.kind==TokenKind.equals){ //=Expression; now know it is assignStmt
 					acceptIt();
-					parseExpression();
+					Expression eiddefault=parseExpression();
 					accept(TokenKind.semicol);
-					return;
+					return new AssignStmt(rootid,eiddefault,scanner.position);
 				}
-				else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?)
+				else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?) //now know is callStmt
 					acceptIt();
-					if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+					ExprList eliddefault=new ExprList();
+					if(currentToken.kind!=TokenKind.rparen){
+						eliddefault=parseArgumentList();
+					}
 					accept(TokenKind.rparen);
 					accept(TokenKind.semicol);
-					return;
+					return new CallStmt(rootid,eliddefault,scanner.position);
 				}
 				else {
 					parseError("Expecting term but found "+currentToken);
+					return null;//don't care about tree anymore
 				}
 				
 			}
 			
 		default:
 			parseError("Expecting term but found "+currentToken);
+			return null;//don't care bout tree anyomore....
 		}
 		
 			
@@ -451,7 +486,7 @@ public class Parser {
 	 *
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseExpression() throws SyntaxError {
+	private Expression parseExpression() throws SyntaxError {
 		switch(currentToken.kind){
 		case num:
 		case tru:
