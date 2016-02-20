@@ -1,6 +1,6 @@
 package miniJava.SyntacticAnalyzer;
 
-import java.beans.Expression;
+
 
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
@@ -258,14 +258,20 @@ public class Parser {
 	 *<u>Reference</u> ::= (<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)*</p>
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseReference() throws SyntaxError {
+	private Reference parseReference() throws SyntaxError { //might be problem area
+		Reference root = null;
 		if(currentToken.kind==TokenKind.thiz||currentToken.kind==TokenKind.id){
+			if(currentToken.kind==TokenKind.thiz)root=new ThisRef(scanner.position);
+			else root=new IdRef(new Identifier(currentToken),scanner.position);
 			acceptIt();
-		}else parseError("was expecting this or an id and found "+currentToken.toString()+"\n Postion: "+scanner.position.toString());
+		}else parseError("was expecting this or an id and found "+currentToken.toString()+"\n");
 		while(currentToken.kind==TokenKind.dot){
 			acceptIt();
+			root=new QualifiedRef(root,new Identifier(currentToken),scanner.position);
 			accept(TokenKind.id);
+			
 		}
+		return root;
 		
 	}
 	
@@ -274,11 +280,13 @@ public class Parser {
 	 *<p><u>ArrayReference</u> ::= <i>id</i> <b>[</b> <u>Expression</u> <b>]</b></p>
 	 * @throws SyntaxError the syntax error
 	 */
-	private void parseArrayReference() throws SyntaxError {
+	private IndexedRef parseArrayReference() throws SyntaxError {
+		IdRef idr = new IdRef(new Identifier(currentToken),scanner.position);
 		accept(TokenKind.id);
 		accept(TokenKind.lbrack);
-		parseExpression();
+		Expression expr = parseExpression();
 		accept(TokenKind.rbrack);
+		return new IndexedRef(idr,expr,scanner.position);
 	}
 	
 	/**
