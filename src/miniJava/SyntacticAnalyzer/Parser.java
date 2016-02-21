@@ -141,6 +141,9 @@ public class Parser {
 					while(currentToken.kind!=TokenKind.rcurly){
 						statements.add(parseStatement());
 					}
+					MemberDecl member = new FieldDecl(isVis,isAccess,t,name,scanner.position);
+					MethodDecl method = new MethodDecl(member, params, statements, scanner.position);
+					mdl.add(method);
 					acceptIt(); //taking rcurly
 				}
 				else parseError("Expected lparen or semicol but found "+currentToken.kind+"\n Postion: "+scanner.position.toString());
@@ -489,7 +492,7 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private Expression parseExpression() throws SyntaxError {
-		Expression e0;
+		Expression e0 = null;
 		switch(currentToken.kind){
 		//literalExpr
 		case num:
@@ -511,7 +514,7 @@ public class Parser {
 			//????? TODO
 		case lparen: //not sure yet......will have to handle along with appending (binop|bunop Expression)?
 			acceptIt();
-			parseExpression();
+			e0=parseExpression();
 			accept(TokenKind.rparen);
 			break;
 		case nu: //either NewObjectExpr or NewArrayExpr
@@ -592,11 +595,13 @@ public class Parser {
 			parseError("Expecting term but found "+currentToken);
 			return null;//done....
 		}
-		if(currentToken.kind==TokenKind.binop||currentToken.kind==TokenKind.bunop){ //this is where I handle the final thing....
+		if(currentToken.kind==TokenKind.binop||currentToken.kind==TokenKind.bunop){ //this is where I handle the final thing....for now lets just not do precedence
+			Token temp = currentToken;
 			acceptIt();
-			parseExpression();
-			return;
+			e0=new BinaryExpr(new Operator(temp),e0,parseExpression(),scanner.position);
+			return e0;
 		}
+		return e0;
 		
 	}
 	

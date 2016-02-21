@@ -43,9 +43,9 @@ public class Compiler {
 		}
 		//end scanning-only
 */		
-		parser.parse();
+		AST goo=parser.parse();
 		ASTDisplay display= new ASTDisplay();
-		//display.showTree(goo);
+		display.showTree(goo);
 		System.out.print("Syntactic analysis complete:  ");
 		if (reporter.hasErrors()) {
 			System.out.println("INVALID MiniJava");
