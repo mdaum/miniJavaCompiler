@@ -51,13 +51,14 @@ public class Parser {
 	/**
 	 * Kicks off Parsing.
 	 */
-	public void parse(){
+	public AST parse(){
 		currentToken=scanner.scan();
 		while(currentToken.kind==TokenKind.comment)currentToken=scanner.scan();
 		try{
-			parseProgram();
+			return parseProgram();
 		}
 		catch(SyntaxError e){
+			return null;
 		}
 	}
 	
@@ -68,13 +69,14 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	
-	private void parseProgram() throws SyntaxError {
+	private Package parseProgram() throws SyntaxError {
 		ClassDeclList c= new ClassDeclList();
 		while(currentToken.kind!=TokenKind.eot){
 			c.add(parseClassDeclaration());
 		}
 		accept(TokenKind.eot);
 		Package p= new Package(c,scanner.position);
+		return p;
 	}
 	
 	/**
@@ -487,78 +489,110 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private Expression parseExpression() throws SyntaxError {
+		Expression e0;
 		switch(currentToken.kind){
+		//literalExpr
 		case num:
+			e0=new LiteralExpr(new IntLiteral(currentToken),scanner.position);
+			acceptIt();
+			break;
 		case tru:
 		case fals:
+			e0=new LiteralExpr(new BooleanLiteral(currentToken),scanner.position);
 			acceptIt();
 			break;
+		//UnaryExpr
 		case unop:
 		case bunop:
+			Operator ounbun=new Operator(currentToken);
 			acceptIt();
-			parseExpression();
+			e0=new UnaryExpr(ounbun,parseExpression(),scanner.position);
 			break;
-		case lparen:
+			//????? TODO
+		case lparen: //not sure yet......will have to handle along with appending (binop|bunop Expression)?
 			acceptIt();
 			parseExpression();
 			accept(TokenKind.rparen);
 			break;
-		case nu:
+		case nu: //either NewObjectExpr or NewArrayExpr
 			acceptIt();
-			if(currentToken.kind==TokenKind.interger){ //int[Expression]
+			if(currentToken.kind==TokenKind.interger){ //int[Expression] //NewArrayExpr
 				acceptIt();
 				accept(TokenKind.lbrack);
-				parseExpression();
+				e0=new NewArrayExpr(new BaseType(TypeKind.INT,scanner.position),parseExpression(),scanner.position);
 				accept(TokenKind.rbrack);
 				break;
 			}
 			else{ //starts with id
+				Token nuid=currentToken;
 				accept(TokenKind.id);
-				if(currentToken.kind==TokenKind.lparen){
+				if(currentToken.kind==TokenKind.lparen){ //NewObjectExpr
 					acceptIt();
 					accept(TokenKind.rparen);
+					e0=new NewObjectExpr(new ClassType(new Identifier(nuid),scanner.position),scanner.position);
 					break;
 				}
-				else{
+				else{ //NewArrayExpr
 					accept(TokenKind.lbrack);
-					parseExpression();
+					e0=new NewArrayExpr(new ClassType(new Identifier(nuid),scanner.position),parseExpression(),scanner.position);
 					accept(TokenKind.rbrack);
 					break;
 				}
 			}
-		case thiz:
+		case thiz: //either RefExpr or CallExpr
 			acceptIt();
+			Reference rootthiz = new ThisRef(scanner.position); //will always start with reference
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
+				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken),scanner.position);
 				accept(TokenKind.id);
 			}
-			if(currentToken.kind!=TokenKind.lparen)break;
+			//now have current Reference
+			if(currentToken.kind!=TokenKind.lparen){//RefExpr
+				e0=new RefExpr(rootthiz,scanner.position);
+				break;
+			}
+			//CallExpr
 			accept(TokenKind.lparen);
-			if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+			if(currentToken.kind!=TokenKind.rparen){
+				e0=new CallExpr(rootthiz,parseArgumentList(),scanner.position);
+			}
 			accept(TokenKind.rparen);
 			break;
-		case id:
+		case id: //RefExpr or CallExpr again
+			Reference rootid = new IdRef(new Identifier(currentToken),scanner.position); //will always start with reference
+			IdRef temp= (IdRef) rootid;
 			acceptIt();
-			if(currentToken.kind==TokenKind.lbrack){//id[Expression]
+			if(currentToken.kind==TokenKind.lbrack){//id[Expression] //RefExpr...but Indexed
 				acceptIt();
-				parseExpression();
+				e0=new RefExpr(new IndexedRef(temp,parseExpression(),scanner.position),scanner.position);
 				accept(TokenKind.rbrack);
 				break;
 			}
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
+				rootid=new QualifiedRef(rootid,new Identifier(currentToken),scanner.position);
 				accept(TokenKind.id);
 			}
-			if(currentToken.kind!=TokenKind.lparen)break;
-			accept(TokenKind.lparen);
-			if(currentToken.kind!=TokenKind.rparen)parseArgumentList();
+			//now have full Ref
+			if(currentToken.kind!=TokenKind.lparen){//Ref Expr, non-Indexed
+				e0=new RefExpr(rootid,scanner.position);
+				break;
+			}
+			accept(TokenKind.lparen);//CallExpr
+			ExprList elid=new ExprList();
+			if(currentToken.kind!=TokenKind.rparen){
+				elid=parseArgumentList();
+			}
+			e0=new CallExpr(rootid,elid,scanner.position);
 			accept(TokenKind.rparen);
 			break;
 			
 		default:
 			parseError("Expecting term but found "+currentToken);
+			return null;//done....
 		}
-		if(currentToken.kind==TokenKind.binop||currentToken.kind==TokenKind.bunop){
+		if(currentToken.kind==TokenKind.binop||currentToken.kind==TokenKind.bunop){ //this is where I handle the final thing....
 			acceptIt();
 			parseExpression();
 			return;
