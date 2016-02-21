@@ -45,7 +45,6 @@ public class Compiler {
 */		
 		AST goo=parser.parse();
 		ASTDisplay display= new ASTDisplay();
-		display.showTree(goo);
 		System.out.print("Syntactic analysis complete:  ");
 		if (reporter.hasErrors()) {
 			System.out.println("INVALID MiniJava");
@@ -53,6 +52,7 @@ public class Compiler {
 		}
 		else {
 			System.out.println("valid MiniJava");
+			display.showTree(goo); //only step through a valid MiniJava Tree....
 			System.exit(0);
 		}
 	}

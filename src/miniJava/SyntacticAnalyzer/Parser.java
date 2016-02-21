@@ -99,9 +99,9 @@ public class Parser {
 		while(currentToken.kind!=TokenKind.rcurly){ // constructing MemberDecl first...
 			boolean isVis=parseVisibility();//laying out all i need for either field or method decl
 			boolean isAccess=parseAccess();
-			Type t = null;
+			Type t;
 			String name;
-			ParameterDeclList params=null;
+			ParameterDeclList params=new ParameterDeclList();
 			StatementList statements = new StatementList();
 			if(currentToken.kind==TokenKind.voyd){//method declaration
 				t= new BaseType(TypeKind.VOID,scanner.position); //save off void type
@@ -265,12 +265,15 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private Reference parseReference() throws SyntaxError { //might be problem area
-		Reference root = null;
+		Reference root;
 		if(currentToken.kind==TokenKind.thiz||currentToken.kind==TokenKind.id){
 			if(currentToken.kind==TokenKind.thiz)root=new ThisRef(scanner.position);
 			else root=new IdRef(new Identifier(currentToken),scanner.position);
 			acceptIt();
-		}else parseError("was expecting this or an id and found "+currentToken.toString()+"\n");
+		}else {
+			parseError("was expecting this or an id and found "+currentToken.toString()+"\n");
+			return null;
+		}
 		while(currentToken.kind==TokenKind.dot){
 			acceptIt();
 			root=new QualifiedRef(root,new Identifier(currentToken),scanner.position);
@@ -328,7 +331,7 @@ public class Parser {
 			return new VarDeclStmt(vdbool,ebool,scanner.position);
 		case ret: //return statement COME BACK....
 			acceptIt();
-			Expression eret = null;
+			Expression eret=null;
 			boolean haseret=false;
 			if(currentToken.kind!=TokenKind.semicol){
 				eret=parseExpression();
@@ -492,7 +495,7 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private Expression parseExpression() throws SyntaxError {
-		Expression e0 = null;
+		Expression e0=null;
 		switch(currentToken.kind){
 		//literalExpr
 		case num:
