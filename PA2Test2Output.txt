@@ -1,0 +1,70 @@
+Syntactic analysis ... 
+======= AST Display =========================
+Package
+  ClassDeclList [1]
+  . ClassDecl
+  .   "PA2sample" classname
+  .   FieldDeclList [1]
+  .   . (public) FieldDecl
+  .   .   BOOLEAN BaseType
+  .   .   "c" fieldname
+  .   MethodDeclList [1]
+  .   . (public static) MethodDecl
+  .   .   VOID BaseType
+  .   .   "main" methodname
+  .   .   ParameterDeclList [1]
+  .   .   . ParameterDecl
+  .   .   .   ArrayType
+  .   .   .     ClassType
+  .   .   .       "String" classname
+  .   .   .   "args"parametername 
+  .   .   StmtList [1]
+  .   .   . IfStmt
+  .   .   .   BinaryExpr
+  .   .   .     ">" Operator
+  .   .   .       RefExpr
+  .   .   .         IdRef
+  .   .   .           "x" Identifier
+  .   .   .       LiteralExpr
+  .   .   .         "1" IntLiteral
+  .   .   .   AssignStmt
+  .   .   .     IdRef
+  .   .   .       "x" Identifier
+  .   .   .     BinaryExpr
+  .   .   .       "*" Operator
+  .   .   .         BinaryExpr
+  .   .   .           "+" Operator
+  .   .   .             LiteralExpr
+  .   .   .               "1" IntLiteral
+  .   .   .             LiteralExpr
+  .   .   .               "2" IntLiteral
+  .   .   .         BinaryExpr
+  .   .   .           "+" Operator
+  .   .   .             RefExpr
+  .   .   .               IdRef
+  .   .   .                 "x" Identifier
+  .   .   .             BinaryExpr
+  .   .   .               "-" Operator
+  .   .   .                 LiteralExpr
+  .   .   .                   "4" IntLiteral
+  .   .   .                 BinaryExpr
+  .   .   .                   "*" Operator
+  .   .   .                     LiteralExpr
+  .   .   .                       "3" IntLiteral
+  .   .   .                     BinaryExpr
+  .   .   .                       "+" Operator
+  .   .   .                         LiteralExpr
+  .   .   .                           "9" IntLiteral
+  .   .   .                         LiteralExpr
+  .   .   .                           "2" IntLiteral
+  .   .   .   IxAssignStmt
+  .   .   .     IndexedRef
+  .   .   .       RefExpr
+  .   .   .         IdRef
+  .   .   .           "b" Identifier
+  .   .   .       IdRef
+  .   .   .         "a" Identifier
+  .   .   .     LiteralExpr
+  .   .   .       "4" IntLiteral
+=============================================
+Syntactic analysis complete:  valid MiniJava

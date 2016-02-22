@@ -478,8 +478,75 @@ public class Parser {
 		
 	}
 	
+	private Expression parseExpression(){
+		return ParseD();
+	}
+	private Expression ParseD(){
+		Expression D = ParseC();
+		while(currentToken.spelling.equals("||")){
+			Token temp = currentToken;
+			acceptIt();
+			D=new BinaryExpr(new Operator(temp),D,ParseC(),scanner.position);
+		}
+		return D;
+	}
+	private Expression ParseC(){
+		Expression C = ParseEq();
+		while(currentToken.spelling.equals("&&")){
+			Token temp = currentToken;
+			acceptIt();
+			C=new BinaryExpr(new Operator(temp),C,ParseEq(),scanner.position);
+		}
+		return C;
+	}
+	private Expression ParseEq(){
+		Expression Eq = ParseRe();
+		while(currentToken.spelling.equals("==")||currentToken.spelling.equals("!=")){
+			Token temp = currentToken;
+			acceptIt();
+			Eq=new BinaryExpr(new Operator(temp),Eq,ParseRe(),scanner.position);
+		}
+		return Eq;
+	}
+	private Expression ParseRe(){
+		Expression Re=ParseAdd();
+		while(currentToken.spelling.equals("<=")||currentToken.spelling.equals("<")||currentToken.spelling.equals(">")||currentToken.spelling.equals(">=")){
+			Token temp =currentToken;
+			acceptIt();
+			Re=new BinaryExpr(new Operator(temp),Re,ParseAdd(),scanner.position);
+		}
+		return Re;
+	}
+	private Expression ParseAdd(){
+		Expression Add=ParseMult();
+		while(currentToken.spelling.equals("+")||currentToken.spelling.equals("-")){
+			Token temp =currentToken;
+			acceptIt();
+			Add=new BinaryExpr(new Operator(temp),Add,ParseMult(),scanner.position);
+		}
+		return Add;
+	}
+	private Expression ParseMult(){
+		Expression Mult = ParseUnary();
+		while(currentToken.spelling.equals("*")||currentToken.spelling.equals("/")){
+			Token temp =currentToken;
+			acceptIt();
+			Mult=new BinaryExpr(new Operator(temp),Mult,ParseUnary(),scanner.position);
+		}
+		return Mult;
+	}
+	private Expression ParseUnary(){
+		Expression E;
+		if(currentToken.spelling.equals("-")||currentToken.spelling.equals("!")){
+			Operator ounbun=new Operator(currentToken);
+			acceptIt();
+			E=new UnaryExpr(ounbun,ParseUnary(),scanner.position);
+		}
+		else E=ParseRest();
+		return E;
+	}
 	/**
-	 * Parses the expression.
+	 * Parses the expression. Note this now does rest due to precedence implementation
 	 *<p><u>Expression</u> ::= <br>
 	 *(<b>this</b> | <i>id</i>) (<b>.</b><i>id</i>)* ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
 	 *|  <i>id</i> <b>[</b> <u>Expression</u> <b>]</b> ((<i>binop</i>|<i>bunop</i>) <u>Expression</u>)?<br>
@@ -494,7 +561,7 @@ public class Parser {
 	 *
 	 * @throws SyntaxError the syntax error
 	 */
-	private Expression parseExpression() throws SyntaxError {
+	private Expression ParseRest() throws SyntaxError {
 		Expression e0=null;
 		switch(currentToken.kind){
 		//literalExpr
@@ -508,12 +575,12 @@ public class Parser {
 			acceptIt();
 			break;
 		//UnaryExpr
-		case unop:
+		/*case unop:
 		case bunop:
 			Operator ounbun=new Operator(currentToken);
 			acceptIt();
 			e0=new UnaryExpr(ounbun,parseExpression(),scanner.position);
-			break;
+			break;*/
 			//????? TODO
 		case lparen: //not sure yet......will have to handle along with appending (binop|bunop Expression)?
 			acceptIt();
@@ -597,12 +664,6 @@ public class Parser {
 		default:
 			parseError("Expecting term but found "+currentToken);
 			return null;//done....
-		}
-		if(currentToken.kind==TokenKind.binop||currentToken.kind==TokenKind.bunop){ //this is where I handle the final thing....for now lets just not do precedence
-			Token temp = currentToken;
-			acceptIt();
-			e0=new BinaryExpr(new Operator(temp),e0,parseExpression(),scanner.position);
-			return e0;
 		}
 		return e0;
 		

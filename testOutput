@@ -1,0 +1,167 @@
+Syntactic analysis ... 
+======= AST Display =========================
+Package
+  ClassDeclList [1]
+  . ClassDecl
+  .   "test" classname
+  .   FieldDeclList [5]
+  .   . (public) FieldDecl
+  .   .   INT BaseType
+  .   .   "space" fieldname
+  .   . (public) FieldDecl
+  .   .   INT BaseType
+  .   .   "jam" fieldname
+  .   . (public static) FieldDecl
+  .   .   BOOLEAN BaseType
+  .   .   "bball" fieldname
+  .   . (public) FieldDecl
+  .   .   INT BaseType
+  .   .   "goo" fieldname
+  .   . (public) FieldDecl
+  .   .   BOOLEAN BaseType
+  .   .   "iamh_ere__" fieldname
+  .   MethodDeclList [1]
+  .   . (public static) MethodDecl
+  .   .   VOID BaseType
+  .   .   "main" methodname
+  .   .   ParameterDeclList [1]
+  .   .   . ParameterDecl
+  .   .   .   ArrayType
+  .   .   .     ClassType
+  .   .   .       "String" classname
+  .   .   .   "args"parametername 
+  .   .   StmtList [10]
+  .   .   . AssignStmt
+  .   .   .   IdRef
+  .   .   .     "space" Identifier
+  .   .   .   LiteralExpr
+  .   .   .     "1" IntLiteral
+  .   .   . AssignStmt
+  .   .   .   IdRef
+  .   .   .     "jam" Identifier
+  .   .   .   BinaryExpr
+  .   .   .     "+" Operator
+  .   .   .       LiteralExpr
+  .   .   .         "2" IntLiteral
+  .   .   .       BinaryExpr
+  .   .   .         "+" Operator
+  .   .   .           LiteralExpr
+  .   .   .             "0" IntLiteral
+  .   .   .           LiteralExpr
+  .   .   .             "999" IntLiteral
+  .   .   . AssignStmt
+  .   .   .   QualifiedRef
+  .   .   .     "bball" Identifier
+  .   .   .     ThisRef
+  .   .   .   LiteralExpr
+  .   .   .     "true" BooleanLiteral
+  .   .   . VarDeclStmt
+  .   .   .   VarDecl
+  .   .   .     INT BaseType
+  .   .   .     "slam" varname
+  .   .   .   UnaryExpr
+  .   .   .     "-" Operator
+  .   .   .       LiteralExpr
+  .   .   .         "322" IntLiteral
+  .   .   . VarDeclStmt
+  .   .   .   VarDecl
+  .   .   .     BOOLEAN BaseType
+  .   .   .     "welcome" varname
+  .   .   .   BinaryExpr
+  .   .   .     "&&" Operator
+  .   .   .       RefExpr
+  .   .   .         IdRef
+  .   .   .           "bball" Identifier
+  .   .   .       BinaryExpr
+  .   .   .         "&&" Operator
+  .   .   .           BinaryExpr
+  .   .   .             "||" Operator
+  .   .   .               LiteralExpr
+  .   .   .                 "true" BooleanLiteral
+  .   .   .               LiteralExpr
+  .   .   .                 "false" BooleanLiteral
+  .   .   .           UnaryExpr
+  .   .   .             "!" Operator
+  .   .   .               RefExpr
+  .   .   .                 IdRef
+  .   .   .                   "bball" Identifier
+  .   .   . AssignStmt
+  .   .   .   IdRef
+  .   .   .     "bball" Identifier
+  .   .   .   BinaryExpr
+  .   .   .     ">" Operator
+  .   .   .       LiteralExpr
+  .   .   .         "5" IntLiteral
+  .   .   .       BinaryExpr
+  .   .   .         "&&" Operator
+  .   .   .           LiteralExpr
+  .   .   .             "3" IntLiteral
+  .   .   .           BinaryExpr
+  .   .   .             "<" Operator
+  .   .   .               LiteralExpr
+  .   .   .                 "2" IntLiteral
+  .   .   .               BinaryExpr
+  .   .   .                 "||" Operator
+  .   .   .                   LiteralExpr
+  .   .   .                     "1919" IntLiteral
+  .   .   .                   BinaryExpr
+  .   .   .                     "!=" Operator
+  .   .   .                       LiteralExpr
+  .   .   .                         "700" IntLiteral
+  .   .   .                       BinaryExpr
+  .   .   .                         "||" Operator
+  .   .   .                           LiteralExpr
+  .   .   .                             "6" IntLiteral
+  .   .   .                           BinaryExpr
+  .   .   .                             ">=" Operator
+  .   .   .                               RefExpr
+  .   .   .                                 IdRef
+  .   .   .                                   "jam" Identifier
+  .   .   .                               RefExpr
+  .   .   .                                 IdRef
+  .   .   .                                   "space" Identifier
+  .   .   . CallStmt
+  .   .   .   QualifiedRef
+  .   .   .     "forever" Identifier
+  .   .   .     QualifiedRef
+  .   .   .       "cali" Identifier
+  .   .   .       QualifiedRef
+  .   .   .         "super" Identifier
+  .   .   .         IdRef
+  .   .   .           "bbal" Identifier
+  .   .   .   ExprList [2]
+  .   .   .   . LiteralExpr
+  .   .   .   .   "5" IntLiteral
+  .   .   .   . LiteralExpr
+  .   .   .   .   "5" IntLiteral
+  .   .   . AssignStmt
+  .   .   .   QualifiedRef
+  .   .   .     "soe" Identifier
+  .   .   .     QualifiedRef
+  .   .   .       "nice" Identifier
+  .   .   .       IdRef
+  .   .   .         "bbal" Identifier
+  .   .   .   BinaryExpr
+  .   .   .     "&&" Operator
+  .   .   .       LiteralExpr
+  .   .   .         "true" BooleanLiteral
+  .   .   .       LiteralExpr
+  .   .   .         "5" IntLiteral
+  .   .   . CallStmt
+  .   .   .   QualifiedRef
+  .   .   .     "setColor" Identifier
+  .   .   .     IdRef
+  .   .   .       "s" Identifier
+  .   .   .   ExprList [1]
+  .   .   .   . RefExpr
+  .   .   .   .   QualifiedRef
+  .   .   .   .     "PASTEL_GREEN" Identifier
+  .   .   .   .     IdRef
+  .   .   .   .       "ColorSpecial" Identifier
+  .   .   . IfStmt
+  .   .   .   RefExpr
+  .   .   .     IdRef
+  .   .   .       "bball" Identifier
+  .   .   .   ReturnStmt
+=============================================
+Syntactic analysis complete:  valid MiniJava
