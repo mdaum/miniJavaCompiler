@@ -21,7 +21,7 @@ private boolean shutUpAndJam(int body,randomTypeID nobody,boolean sandwich){
 		shutUpAndJam(8/77,nobody,true);
 		s=new shape()+true-false&&5;
 		nonExistingArray[-12] = nonExistingArray[body];
-		 hi = args[1].method();
+		 hi = args[1];
 	}
 }
 public int[] justJAM(){

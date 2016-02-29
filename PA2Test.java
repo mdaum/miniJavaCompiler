@@ -5,7 +5,7 @@ class PA2sample {
   
     public static void main(String[] args){
         if (x > 1)
-            x = 1 + 2 * x;
+            x = 1 + 2 + 3 + x;
         else
             a[b] = 4;
     }
