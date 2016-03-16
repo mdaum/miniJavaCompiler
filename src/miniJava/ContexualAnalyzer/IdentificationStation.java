@@ -10,6 +10,7 @@ public class IdentificationStation {
 	then we can shimmy down AST just like DisplayAST and we can start populating table instead of printing..
 	IMPORTANT: Check if this traverses in a way that can handle local decl vs class and member decls!!
 	for above: check this....https://en.wikipedia.org/wiki/Tree_traversal#In-order
+	UPDATE: level-order for two levels, because the contents of methods should be read in order
 	linking should happen on this pass
 	this identification station will implemement Visitor<idtable structure, Object>
 	so, every visit method will look like: public Object visitXXX(XXX name, idtable structure) and will return null
