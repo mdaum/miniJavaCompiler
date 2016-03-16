@@ -114,8 +114,8 @@ public class Scanner {
 	    	
 	    	case '-':
 	    		takeIt();
-	    		if(currentChar=='-')parseError("-- is not a valid operator");
-	    		return TokenKind.bunop;
+	    		if(currentChar=='-')scanError("-- is not a valid operator"); //didn't like parse error garbage....
+	    		else return TokenKind.bunop;
 	    		
 	    	case '=': //either binop or assignment
 	    		takeIt();
@@ -250,16 +250,5 @@ public class Scanner {
 	    private boolean isWhiteSpace(char c){
 	    	return (c == ' ' || c == '\t' || isNewLine(c));
 	    }
-	    public void parseError(String e) throws SyntaxError {
-			reporter.reportError("Parse error: "+e+"\n Postion: "+this.position.toString());
-			throw new SyntaxError();
-		}
-		/**
-		 * The Class SyntaxError.
-		 */
-		class SyntaxError extends Error{
-			
-			/** The Constant serialVersionUID. */
-			private static final long serialVersionUID=1L;
-		}
+
 }

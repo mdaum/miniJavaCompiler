@@ -630,6 +630,9 @@ public class Parser {
 			if(currentToken.kind!=TokenKind.rparen){
 				e0=new CallExpr(rootthiz,parseArgumentList(),scanner.position);
 			}
+			else{ //didn't handle zero param here....this should fix it..
+				e0=new CallExpr(rootthiz,new ExprList(),scanner.position);
+			}
 			accept(TokenKind.rparen);
 			break;
 		case id: //RefExpr or CallExpr again
