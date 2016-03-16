@@ -569,6 +569,10 @@ public class Parser {
 			e0=new LiteralExpr(new IntLiteral(currentToken),scanner.position);
 			acceptIt();
 			break;
+		case nul:
+			e0=new LiteralExpr(new NullLiteral(currentToken),scanner.position);
+			acceptIt();
+			break;
 		case tru:
 		case fals:
 			e0=new LiteralExpr(new BooleanLiteral(currentToken),scanner.position);

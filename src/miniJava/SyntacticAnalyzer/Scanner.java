@@ -177,6 +177,7 @@ public class Scanner {
 	    			if(currentSpelling.toString().equals("else"))return TokenKind.elsz;
 	    			if(currentSpelling.toString().equals("true"))return TokenKind.tru;
 	    			if(currentSpelling.toString().equals("false"))return TokenKind.fals;
+	    			if(currentSpelling.toString().equals("null"))return TokenKind.nul;
 	    			return TokenKind.id;
 	    		}
 	    		if(isDigit(currentChar)){//start of num
