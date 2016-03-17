@@ -1,5 +1,6 @@
 package miniJava.ContexualAnalyzer;
 
+import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 
@@ -16,17 +17,49 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	this identification station will implemement Visitor<idtable structure, Object>
 	so, every visit method will look like: public Object visitXXX(XXX name, idtable structure) and will return null
 	pass the idtable down each level of traversal and it will become populated*/
-	
+	int levelPassCount;
+	boolean levelPassDone;
+	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
+		IDTable t = new IDTable(reporter);
+		levelPassDone=false;
+		levelPassCount=0;
+		ast.visit(this, t);
+		return ast;
+	}
 	@Override
-	public Object visitPackage(Package prog, IDTable arg) {
-		// TODO Auto-generated method stub
+	public Object visitPackage(Package prog, IDTable arg) { //goal right now is to get down traversal....
+		for (ClassDecl c: prog.classDeclList){
+			System.out.println(c.name);
+			c.visit(this,arg);
+		}
+		levelPassDone=true;
+		for(ClassDecl c: prog.classDeclList){ //not adding classDecl here....but am simply revisiting to go down 
+			System.out.println(c.name+" Round 2");
+			c.visit(this, arg);
+		}
 		return null;
 	}
 
 	@Override
 	public Object visitClassDecl(ClassDecl cd, IDTable arg) {
-		// TODO Auto-generated method stub
+		if(!levelPassDone){
+		for(FieldDecl fd: cd.fieldDeclList){ //visiting fields on first pass
+			//doSomething
+			System.out.println(fd.name);
+			fd.visit(this, arg);
+		}
 		return null;
+		}
+		
+		else{ //second pass, go onto visiting methods
+			for (MethodDecl d: cd.methodDeclList){
+				//doSomething
+				System.out.println(d.name);
+				d.visit(this, arg);
+			}
+			return null;
+		}
+		
 	}
 
 	@Override

@@ -7,6 +7,7 @@ import java.io.InputStream;
 import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.AbstractSyntaxTrees.ASTDisplay;
 import miniJava.ContexualAnalyzer.IDTable;
+import miniJava.ContexualAnalyzer.IdentificationStation;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;
@@ -48,8 +49,8 @@ public class Compiler {
 		ASTDisplay display= new ASTDisplay();
 		System.out.print("Syntactic analysis complete:  ");
 		System.out.println("Contextual Analysis ... ");
-		IDTable t = new IDTable(reporter);
-		//TODO 
+		IdentificationStation i=new IdentificationStation();
+		goo=i.Decorate(goo, reporter);
 		
 		System.out.println("Contextual Analysis complete: ");
 		if (reporter.hasErrors()) {

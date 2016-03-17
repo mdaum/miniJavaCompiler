@@ -10,7 +10,6 @@ import miniJava.SyntacticAnalyzer.Token;
 import miniJava.SyntacticAnalyzer.TokenKind;
 
 public class IDTable {
-	
 	ArrayList<HashMap<String,Declaration>> table = new ArrayList<HashMap<String,Declaration>>(); //stack of hash tables, nested block structure
 	ErrorReporter reporter;
 	public IDTable(ErrorReporter e){
@@ -45,7 +44,7 @@ public class IDTable {
 		}catch (SyntaxError err){
 			System.out.println("impossible!");
 		}
-		
+		openScope();//now opening level 1: ClassDecl
 	}
 	/**
 	 * Throws a new scope on the stack
