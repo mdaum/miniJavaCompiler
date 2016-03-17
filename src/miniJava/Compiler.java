@@ -6,6 +6,7 @@ import java.io.InputStream;
 
 import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.AbstractSyntaxTrees.ASTDisplay;
+import miniJava.ContexualAnalyzer.IDTable;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;
@@ -46,6 +47,11 @@ public class Compiler {
 		AST goo=parser.parse();
 		ASTDisplay display= new ASTDisplay();
 		System.out.print("Syntactic analysis complete:  ");
+		System.out.println("Contextual Analysis ... ");
+		IDTable t = new IDTable(reporter);
+		//TODO 
+		
+		System.out.println("Contextual Analysis complete: ");
 		if (reporter.hasErrors()) {
 			System.out.println("INVALID MiniJava");
 			System.exit(4);

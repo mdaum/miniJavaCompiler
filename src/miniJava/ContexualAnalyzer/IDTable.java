@@ -3,6 +3,7 @@ package miniJava.ContexualAnalyzer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.SyntacticAnalyzer.SourcePosition;
 import miniJava.SyntacticAnalyzer.Token;
@@ -11,10 +12,11 @@ import miniJava.SyntacticAnalyzer.TokenKind;
 public class IDTable {
 	
 	ArrayList<HashMap<String,Declaration>> table = new ArrayList<HashMap<String,Declaration>>(); //stack of hash tables, nested block structure
-	
-	public IDTable(){
+	ErrorReporter reporter;
+	public IDTable(ErrorReporter e){
 		openScope();//opening predefined level
 		//creating predifined classes...
+		this.reporter=e;
 		
 		SourcePosition predefPos=new SourcePosition(-1,-1);//predefined sourcePos
 		
@@ -36,7 +38,13 @@ public class IDTable {
 		ClassDecl systemDecl= new ClassDecl("System",systemfdl,new MethodDeclList(),predefPos);
 		
 		//now add them to current scope
-		
+		try{
+			enter(printStreamDecl);
+			enter(stringDecl);
+			enter(systemDecl);
+		}catch (SyntaxError err){
+			System.out.println("impossible!");
+		}
 		
 	}
 	/**
@@ -52,6 +60,32 @@ public class IDTable {
 		if(table.size()< 2)//can't close predefined level
 			throw new RuntimeException("Cannot close predefined scope!");
 		table.remove(table.size()-1);
+	}
+	
+	public void enter(Declaration decl){ //will report within enter, so I can get both pieces of decl....
+		String name = decl.name;
+		for(int i =3;i<table.size();i++){ //cannot hide from parameter and higher if you are local
+			Declaration previousDecl = table.get(i).get(name);
+			if(previousDecl!=null){
+				reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+				throw new SyntaxError();
+			}
+		} //not in previous scopes if currently in scopes 3+
+		HashMap<String,Declaration> currentScope=table.get(table.size()-1);
+		Declaration previousDecl=currentScope.get(name);
+		if(previousDecl!=null){//checking current scope if in scopes 0,1,or 2
+			reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+			throw new SyntaxError();
+		}
+		//we are good, add to current scope
+		currentScope.put(name, decl);
+		
+	}
+	
+	class SyntaxError extends Error{
+		
+		/** The Constant serialVersionUID. */
+		private static final long serialVersionUID=1L;
 	}
 	
 }

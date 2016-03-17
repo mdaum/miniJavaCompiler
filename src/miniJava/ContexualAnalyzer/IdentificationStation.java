@@ -1,9 +1,10 @@
 package miniJava.ContexualAnalyzer;
 
-public class IdentificationStation {
+import miniJava.AbstractSyntaxTrees.*;
+import miniJava.AbstractSyntaxTrees.Package;
 
-}
-/*General Notes for traversal:
+public class IdentificationStation implements Visitor<IDTable,Object>{
+	/*General Notes for traversal:
 	Look at DisplayAST.java, super helpful stuff there.
 	So we need to make a data structure (maybe array of hash maps?) in order to track our id process
 	openscope and closescope can be choosing which hash map we are messing with
@@ -16,3 +17,203 @@ public class IdentificationStation {
 	so, every visit method will look like: public Object visitXXX(XXX name, idtable structure) and will return null
 	pass the idtable down each level of traversal and it will become populated*/
 	
+	@Override
+	public Object visitPackage(Package prog, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitClassDecl(ClassDecl cd, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitFieldDecl(FieldDecl fd, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitMethodDecl(MethodDecl md, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitParameterDecl(ParameterDecl pd, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitVarDecl(VarDecl decl, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitBaseType(BaseType type, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitClassType(ClassType type, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitArrayType(ArrayType type, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitBlockStmt(BlockStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitVardeclStmt(VarDeclStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitAssignStmt(AssignStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitIxAssignStmt(IxAssignStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitCallStmt(CallStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitReturnStmt(ReturnStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitIfStmt(IfStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitWhileStmt(WhileStmt stmt, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitUnaryExpr(UnaryExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitBinaryExpr(BinaryExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitRefExpr(RefExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitCallExpr(CallExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitLiteralExpr(LiteralExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitNewObjectExpr(NewObjectExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitNewArrayExpr(NewArrayExpr expr, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitQualifiedRef(QualifiedRef ref, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitIndexedRef(IndexedRef ref, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitIdRef(IdRef ref, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitThisRef(ThisRef ref, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitIdentifier(Identifier id, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitOperator(Operator op, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitIntLiteral(IntLiteral num, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitBooleanLiteral(BooleanLiteral bool, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object visitNullLiteral(NullLiteral nullLiteral, IDTable arg) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}
+
