@@ -3,6 +3,8 @@ package miniJava.ContexualAnalyzer;
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.ContexualAnalyzer.IDTable.SyntaxError;
+
 
 public class IdentificationStation implements Visitor<IDTable,Object>{
 	/*General Notes for traversal:
@@ -18,23 +20,33 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	so, every visit method will look like: public Object visitXXX(XXX name, idtable structure) and will return null
 	pass the idtable down each level of traversal and it will become populated*/
 	int levelPassCount;
-	boolean levelPassDone;
+	ErrorReporter reporter;
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		IDTable t = new IDTable(reporter);
-		levelPassDone=false;
 		levelPassCount=0;
+		this.reporter=reporter;
 		ast.visit(this, t);
 		return ast;
 	}
 	@Override
 	public Object visitPackage(Package prog, IDTable arg) { //goal right now is to get down traversal....
 		for (ClassDecl c: prog.classDeclList){
+			addDeclaration(arg,c); //this should finish class level stuff
+		}
+		arg.openScope();//now in members
+		for (ClassDecl c: prog.classDeclList){
 			System.out.println(c.name);
 			c.visit(this,arg);
 		}
-		levelPassDone=true;
-		for(ClassDecl c: prog.classDeclList){ //not adding classDecl here....but am simply revisiting to go down 
+		levelPassCount++;//added fieldDecls
+		for(ClassDecl c: prog.classDeclList){ 
 			System.out.println(c.name+" Round 2");
+			c.visit(this, arg);
+		} //added methodDecls
+		
+		levelPassCount++;
+		for(ClassDecl c: prog.classDeclList){ //shimmy down MethodDecls
+			System.out.println(c.name+" Round 3");
 			c.visit(this, arg);
 		}
 		return null;
@@ -42,34 +54,40 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitClassDecl(ClassDecl cd, IDTable arg) {
-		if(!levelPassDone){
-		for(FieldDecl fd: cd.fieldDeclList){ //visiting fields on first pass
-			//doSomething
+		if(levelPassCount==0){
+		for(FieldDecl fd: cd.fieldDeclList){ //visiting fields on first pass, and adding methoddecls...not visiting methods tho
+			fd.c=cd;
 			System.out.println(fd.name);
 			fd.visit(this, arg);
 		}
 		return null;
 		}
 		
-		else{ //second pass, go onto visiting methods
+		else if(levelPassCount==1){ //second pass, go onto visiting methods
 			for (MethodDecl d: cd.methodDeclList){
 				//doSomething
+				d.c=cd;
 				System.out.println(d.name);
-				d.visit(this, arg);
+				addDeclaration(arg,d);
 			}
+			return null;
+		}
+		else{ //we shimmy down Method Decl ie visit
+			System.out.println("good so far");
 			return null;
 		}
 		
 	}
 
 	@Override
-	public Object visitFieldDecl(FieldDecl fd, IDTable arg) {
+	public Object visitFieldDecl(FieldDecl fd, IDTable arg) { //here we add the decl
 		// TODO Auto-generated method stub
+		System.out.println("hit visitFieldDecl");
 		return null;
 	}
 
 	@Override
-	public Object visitMethodDecl(MethodDecl md, IDTable arg) {
+	public Object visitMethodDecl(MethodDecl md, IDTable arg) { //now we visit param and open up scope
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -246,6 +264,13 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public Object visitNullLiteral(NullLiteral nullLiteral, IDTable arg) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	public void addDeclaration(IDTable table, Declaration declaration) {
+		try {
+			table.enter(declaration);
+		} catch (SyntaxError e) {
+			
+		}
 	}
 
 }

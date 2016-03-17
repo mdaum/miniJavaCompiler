@@ -73,7 +73,17 @@ public class IDTable {
 		HashMap<String,Declaration> currentScope=table.get(table.size()-1);
 		Declaration previousDecl=currentScope.get(name);
 		if(previousDecl!=null){//checking current scope if in scopes 0,1,or 2
-			reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+			if(previousDecl instanceof MemberDecl && decl instanceof MemberDecl){//scope 2
+				if(((MemberDecl) previousDecl).c.name.equals(((MemberDecl)decl).c.name)){
+					reporter.reportError("*** Identification error: duplicate member name in same class: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+					throw new SyntaxError();
+				}
+				else{
+					currentScope.put(name, decl);
+					return;
+				}
+			}//otherwise we are dealing with scope 1 so class name issues
+			reporter.reportError("*** Identification error: duplicate class name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
 			throw new SyntaxError();
 		}
 		//we are good, add to current scope
