@@ -5,6 +5,7 @@
 	1. added nullLiteral.java
 	2. added visitNullLiteral to Visitor interface
 	3. updated ASTDisplay to reflect this
+- **Declaration attributes added to Identifier and Reference**
 
 
 
