@@ -14,7 +14,7 @@ public class IDTable {
 	ErrorReporter reporter;
 	public IDTable(ErrorReporter e){
 		openScope();//opening predefined level
-		//creating predifined classes...
+		//creating predefined classes...
 		this.reporter=e;
 		
 		SourcePosition predefPos=new SourcePosition(-1,-1);//predefined sourcePos
@@ -61,7 +61,7 @@ public class IDTable {
 		table.remove(table.size()-1);
 	}
 	
-	public void enter(Declaration decl){ //will report within enter, so I can get both pieces of decl....
+	public void enter(Declaration decl){ //will report error within enter, so I can get both pieces of decl....
 		String name = decl.name;
 		for(int i =3;i<table.size();i++){ //cannot hide from parameter and higher if you are local
 			Declaration previousDecl = table.get(i).get(name);
@@ -69,7 +69,7 @@ public class IDTable {
 				reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
 				throw new SyntaxError();
 			}
-		} //not in previous scopes if currently in scopes 3+
+		} //not found in local or rather local scope not even created yet
 		HashMap<String,Declaration> currentScope=table.get(table.size()-1);
 		Declaration previousDecl=currentScope.get(name);
 		if(previousDecl!=null){//checking current scope if in scopes 0,1,or 2
@@ -78,7 +78,7 @@ public class IDTable {
 					reporter.reportError("*** Identification error: duplicate member name in same class: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
 					throw new SyntaxError();
 				}
-				else{
+				else{ //we are ok, same member name but different classes
 					currentScope.put(name, decl);
 					return;
 				}
@@ -95,6 +95,18 @@ public class IDTable {
 		
 		/** The Constant serialVersionUID. */
 		private static final long serialVersionUID=1L;
+	}
+	public void printTable(){
+		System.out.print("\n ====TABLE DUMP====");
+		for(int i=0;i<table.size();i++){
+			System.out.println();
+			System.out.print("Scope "+i+ ":");
+			for (String d : table.get(i).keySet()) {
+				System.out.print(d+",");
+			}
+		}
+		System.out.println();
+		System.out.println("====END TABLE DUMP==== \n");
 	}
 	
 }

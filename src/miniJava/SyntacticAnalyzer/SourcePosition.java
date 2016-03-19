@@ -13,4 +13,7 @@ public class SourcePosition {
 	public String toString(){
 		return "line " + row + ", space " + col;
 	}
+	public SourcePosition deepClone(){
+		return new SourcePosition(0+this.row,0+this.col);
+	}
 }

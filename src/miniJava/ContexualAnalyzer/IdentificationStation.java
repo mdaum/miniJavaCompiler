@@ -22,20 +22,25 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	int levelPassCount;
 	ErrorReporter reporter;
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
-		IDTable t = new IDTable(reporter);
-		levelPassCount=0;
-		this.reporter=reporter;
-		ast.visit(this, t);
-		return ast;
+		try{IDTable t = new IDTable(reporter);
+			levelPassCount=0;
+			this.reporter=reporter;
+			ast.visit(this, t);
+			t.printTable();
+			return ast;
+		}
+		catch(SyntaxError e){
+			return null;
+		}
 	}
 	@Override
-	public Object visitPackage(Package prog, IDTable arg) { //goal right now is to get down traversal....
+	public Object visitPackage(Package prog, IDTable arg) throws SyntaxError { //goal right now is to get down traversal....
 		for (ClassDecl c: prog.classDeclList){
 			addDeclaration(arg,c); //this should finish class level stuff
 		}
 		arg.openScope();//now in members
 		for (ClassDecl c: prog.classDeclList){
-			System.out.println(c.name);
+			System.out.println(c.name+" Round 1");
 			c.visit(this,arg);
 		}
 		levelPassCount++;//added fieldDecls
@@ -53,9 +58,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitClassDecl(ClassDecl cd, IDTable arg) {
+	public Object visitClassDecl(ClassDecl cd, IDTable arg)throws SyntaxError {
 		if(levelPassCount==0){
-		for(FieldDecl fd: cd.fieldDeclList){ //visiting fields on first pass, and adding methoddecls...not visiting methods tho
+		for(FieldDecl fd: cd.fieldDeclList){ //visiting ie adding fields on first pass
 			fd.c=cd;
 			System.out.println(fd.name);
 			fd.visit(this, arg);
@@ -63,7 +68,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		return null;
 		}
 		
-		else if(levelPassCount==1){ //second pass, go onto visiting methods
+		else if(levelPassCount==1){ //second pass, adding method decls
 			for (MethodDecl d: cd.methodDeclList){
 				//doSomething
 				d.c=cd;
@@ -72,17 +77,24 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			}
 			return null;
 		}
+		
 		else{ //we shimmy down Method Decl ie visit
-			System.out.println("good so far");
+			System.out.println("good so far..Starting to shimmy down MethodDecls");
+			for(MethodDecl d: cd.methodDeclList){
+				d.visit(this, arg);
+			}
 			return null;
 		}
 		
 	}
 
 	@Override
-	public Object visitFieldDecl(FieldDecl fd, IDTable arg) { //here we add the decl
+	public Object visitFieldDecl(FieldDecl fd, IDTable arg) throws SyntaxError { //here we add the decl
 		// TODO Auto-generated method stub
 		System.out.println("hit visitFieldDecl");
+		addDeclaration(arg,fd);	
+		fd.type.visit(this, arg);
+		System.out.println("type ok");
 		return null;
 	}
 
@@ -105,20 +117,27 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitBaseType(BaseType type, IDTable arg) {
+	public Object visitBaseType(BaseType type, IDTable arg) { //don't care doesn't point anywhere
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visitClassType(ClassType type, IDTable arg) {
+	public Object visitClassType(ClassType type, IDTable arg) throws SyntaxError { //Identifier here....
 		// TODO Auto-generated method stub
+		Identifier i = type.className;
+		Declaration d = arg.table.get(1).get(i.spelling);
+		if(!(d instanceof ClassDecl)){
+			reporter.reportError("*** "+i.spelling+" cannot be resolved to a type"+"\n Position: "+i.posn.toString());
+			throw new SyntaxError();
+		}
+		i.d=d;
 		return null;
 	}
 
 	@Override
 	public Object visitArrayType(ArrayType type, IDTable arg) {
-		// TODO Auto-generated method stub
+		type.eltType.visit(this, arg);
 		return null;
 	}
 
@@ -265,12 +284,17 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub
 		return null;
 	}
-	public void addDeclaration(IDTable table, Declaration declaration) {
+	public void addDeclaration(IDTable table, Declaration declaration)throws SyntaxError {
 		try {
 			table.enter(declaration);
-		} catch (SyntaxError e) {
-			
+		} catch (Error e) {
+			throw new SyntaxError();
 		}
+	}
+	class SyntaxError extends Error{
+		
+		/** The Constant serialVersionUID. */
+		private static final long serialVersionUID=1L;
 	}
 
 }
