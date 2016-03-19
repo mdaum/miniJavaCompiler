@@ -128,7 +128,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		Identifier i = type.className;
 		Declaration d = arg.table.get(1).get(i.spelling);
 		if(!(d instanceof ClassDecl)){
-			reporter.reportError("*** "+i.spelling+" cannot be resolved to a type"+"\n Position: "+i.posn.toString());
+			reporter.reportError("*** "+i.spelling+" cannot be resolved to a type"+"\n Position: "+type.posn);
 			throw new SyntaxError();
 		}
 		i.d=d;

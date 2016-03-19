@@ -66,7 +66,7 @@ public class IDTable {
 		for(int i =3;i<table.size();i++){ //cannot hide from parameter and higher if you are local
 			Declaration previousDecl = table.get(i).get(name);
 			if(previousDecl!=null){
-				reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+				reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn.toString());
 				throw new SyntaxError();
 			}
 		} //not found in local or rather local scope not even created yet
