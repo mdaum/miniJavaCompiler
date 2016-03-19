@@ -21,6 +21,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	pass the idtable down each level of traversal and it will become populated*/
 	int levelPassCount;
 	ErrorReporter reporter;
+	private ClassDecl currClass;
+	private MethodDecl currMethod;
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		try{IDTable t = new IDTable(reporter);
 			levelPassCount=0;
@@ -90,7 +92,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitFieldDecl(FieldDecl fd, IDTable arg) throws SyntaxError { //here we add the decl
-		// TODO Auto-generated method stub
 		System.out.println("hit visitFieldDecl");
 		addDeclaration(arg,fd);	
 		fd.type.visit(this, arg);
@@ -100,7 +101,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitMethodDecl(MethodDecl md, IDTable arg) { //now we visit param and open up scope
+		//starting...
 		// TODO Auto-generated method stub
+		
 		return null;
 	}
 
