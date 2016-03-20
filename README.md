@@ -6,8 +6,4 @@
 	2. added visitNullLiteral to Visitor interface
 	3. updated ASTDisplay to reflect this
 
-
-
-
-
-
+- **added SourcePosition to Identifier for better Error Reporting** 
