@@ -6,8 +6,8 @@ import java.io.InputStream;
 
 import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.AbstractSyntaxTrees.ASTDisplay;
-import miniJava.ContexualAnalyzer.IDTable;
-import miniJava.ContexualAnalyzer.IdentificationStation;
+import miniJava.ContextualAnalyzer.IDTable;
+import miniJava.ContextualAnalyzer.IdentificationStation;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;

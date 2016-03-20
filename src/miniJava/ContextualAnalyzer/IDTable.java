@@ -1,4 +1,4 @@
-package miniJava.ContexualAnalyzer;
+package miniJava.ContextualAnalyzer;
 
 import java.util.ArrayList;
 import java.util.HashMap;

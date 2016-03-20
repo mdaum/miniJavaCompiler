@@ -1,11 +1,11 @@
-package miniJava.ContexualAnalyzer;
+package miniJava.ContextualAnalyzer;
 
 import java.util.ArrayList;
 
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
-import miniJava.ContexualAnalyzer.IDTable.SyntaxError;
+import miniJava.ContextualAnalyzer.IDTable.SyntaxError;
 
 
 public class IdentificationStation implements Visitor<IDTable,Object>{
