@@ -7,8 +7,4 @@
 	3. updated ASTDisplay to reflect this
 - **Declaration attributes added to Identifier and Reference**
 
-
-
-
-
-
+- **added SourcePosition to Identifier for better Error Reporting** 
