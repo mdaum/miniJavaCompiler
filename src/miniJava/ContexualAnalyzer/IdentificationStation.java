@@ -1,5 +1,7 @@
 package miniJava.ContexualAnalyzer;
 
+import java.util.ArrayList;
+
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
@@ -34,10 +36,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	ErrorReporter reporter;
 	private ClassDecl currClass;
 	private MethodDecl currMethod;
+	ArrayList<String>currDeclaredVars;
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		try{IDTable t = new IDTable(reporter);
 			levelPassCount=0;
 			this.reporter=reporter;
+			currDeclaredVars=new ArrayList<String>();
 			ast.visit(this, t);
 			t.printTable();
 			return ast;
@@ -99,6 +103,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			//System.out.println("good so far..Starting to shimmy down MethodDecls");
 			for(MethodDecl d: cd.methodDeclList){
 				currMethod=d;
+				currDeclaredVars.clear();//need to clear declared vars...
 				d.visit(this, arg);
 			}
 			return null;
@@ -140,6 +145,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		pd.type.visit(this, arg);//checking type
 		//System.out.println(pd.name+" of type "+pd.type.typeKind.toString()+" is ok.");
 		addDeclaration(arg, pd);
+		currDeclaredVars.add(pd.name);
 		return null;
 	}
 
@@ -199,8 +205,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public Object visitVardeclStmt(VarDeclStmt stmt, IDTable arg) {//working on this...
 		// TODO Auto-generated method stub NOT TESTED
 		stmt.varDecl.type.visit(this, arg);
+		addDeclaration(arg, stmt.varDecl);//add this before going into the expression....handles int x=x+2;
 		stmt.initExp.visit(this, arg);
-		addDeclaration(arg, stmt.varDecl);//don't want to add this before going into the expression....handles int x=x+2;
+		currDeclaredVars.add(stmt.varDecl.name);
 		return null;
 	}
 
@@ -209,6 +216,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub NOT TESTED
 		stmt.val.visit(this, arg);
 		stmt.ref.visit(this, arg);
+		if(stmt.ref.d instanceof MethodDecl){
+			reporter.reportError("Cannot assign a method declaration! \n Position: "+stmt.ref.posn);
+			throw new SyntaxError();
+		}
 		return null;
 	}
 
@@ -237,7 +248,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			reporter.reportError("*** method "+currMethod.name+" should not have a return type! \nPosition:"+stmt.posn);
 			throw new SyntaxError();
 		}
-		stmt.returnExpr.visit(this, arg);
+		if(stmt.returnExpr!=null)stmt.returnExpr.visit(this, arg);
 		return null;
 	}
 
@@ -246,12 +257,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.thenStmt instanceof VarDeclStmt){
-			reporter.reportError("VarDeclStmt cannot be the only statement in if/else execution \nPosition: "+stmt.thenStmt.posn);
+			reporter.reportError("VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.thenStmt.posn);
 			throw new SyntaxError();
 		}
 		stmt.thenStmt.visit(this, arg);
 		if(stmt.elseStmt instanceof VarDeclStmt){
-			reporter.reportError("VarDeclStmt cannot be the only statement in if/else execution \nPosition: "+stmt.elseStmt.posn);
+			reporter.reportError("VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.elseStmt.posn);
 			throw new SyntaxError();
 		}
 		if(stmt.elseStmt != null)stmt.elseStmt.visit(this, arg);
@@ -263,7 +274,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.body instanceof VarDeclStmt){
-			reporter.reportError("VarDeclStmt cannot be the only statement in if/else execution \nPosition: "+stmt.body.posn);
+			reporter.reportError("VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.body.posn);
 			throw new SyntaxError();
 		}
 		stmt.body.visit(this, arg);
@@ -326,7 +337,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	@Override
 	public Object visitQualifiedRef(QualifiedRef ref, IDTable arg) { //have no clue yet ughhhh
 		// TODO Auto-generated method stub
-		
+		System.out.println("Hit unimplemented Qualified Ref");	
 		return null;
 	}
 
@@ -350,6 +361,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			throw new SyntaxError();
 		}
 		if(d instanceof LocalDecl){ //scope 3+
+			if(!currDeclaredVars.contains(d.name)){
+				reporter.reportError("you cannot reference a variable that is currently being declared \n Position: "+d.posn);
+				throw new SyntaxError();
+			}
 			ref.d=d;
 			ref.id.d=d;
 			LinkDump(ref.id,ref.id.d);
@@ -363,7 +378,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 				throw new SyntaxError();
 			}
 			if(currMethod.isStatic&&!(member.isStatic)){//static check...will check qualified part in qualified ref visit
-				reporter.reportError("*** cannot access non-static member "+member.name+" from static method"+currMethod.name+" \n Position: "+ref.posn);
+				reporter.reportError("*** cannot reference non-static member "+member.name+" from static method "+currMethod.name+" \n Position: "+ref.posn);
 				throw new SyntaxError();
 			}
 			//we should be good at this point
