@@ -91,14 +91,17 @@ public class Parser {
 	private ClassDecl parseClassDeclaration() throws SyntaxError {
 		accept(TokenKind.clazz);
 		String cn;
+		SourcePosition posn=scanner.position.deepClone();
 		cn=currentToken.spelling;//classname
 		accept(TokenKind.id);
 		accept(TokenKind.lcurly);
 		FieldDeclList fdl = new FieldDeclList();
-		MethodDeclList mdl = new MethodDeclList(); 
+		MethodDeclList mdl = new MethodDeclList();
+		SourcePosition currMemberPosn;
 		while(currentToken.kind!=TokenKind.rcurly){ // constructing MemberDecl first...
 			boolean isVis=parseVisibility();//laying out all i need for either field or method decl
 			boolean isAccess=parseAccess();
+			currMemberPosn=scanner.position.deepClone();
 			Type t;
 			String name;
 			ParameterDeclList params=new ParameterDeclList();
@@ -118,8 +121,8 @@ public class Parser {
 					statements.add(parseStatement());
 				}
 				accept(TokenKind.rcurly); //taking rcurly
-				MemberDecl member = new FieldDecl(isVis,isAccess,t,name,scanner.position.deepClone());
-				MethodDecl method = new MethodDecl(member, params, statements, scanner.position.deepClone());
+				MemberDecl member = new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
+				MethodDecl method = new MethodDecl(member, params, statements, currMemberPosn);
 				mdl.add(method);
 			}
 			else{ //don't know yet
@@ -127,7 +130,7 @@ public class Parser {
 				name=currentToken.spelling;
 				accept(TokenKind.id);
 				if(currentToken.kind==TokenKind.semicol){//field declaration
-					FieldDecl field= new FieldDecl(isVis,isAccess,t,name,scanner.position.deepClone());
+					FieldDecl field= new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
 					fdl.add(field);
 					acceptIt();
 				}
@@ -141,8 +144,8 @@ public class Parser {
 					while(currentToken.kind!=TokenKind.rcurly){
 						statements.add(parseStatement());
 					}
-					MemberDecl member = new FieldDecl(isVis,isAccess,t,name,scanner.position.deepClone());
-					MethodDecl method = new MethodDecl(member, params, statements, scanner.position.deepClone());
+					MemberDecl member = new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
+					MethodDecl method = new MethodDecl(member, params, statements, currMemberPosn);
 					mdl.add(method);
 					acceptIt(); //taking rcurly
 				}
@@ -151,7 +154,7 @@ public class Parser {
 			}
 		}
 		acceptIt();  //accepting last rcurly
-		ClassDecl c = new ClassDecl(cn, fdl, mdl, scanner.position.deepClone());
+		ClassDecl c = new ClassDecl(cn, fdl, mdl, posn);
 		return c;
 	}
 
@@ -204,7 +207,7 @@ public class Parser {
 			if(currentToken.kind==TokenKind.interger){
 				temp=new BaseType(TypeKind.INT,scanner.position.deepClone());
 			}
-			else  temp = new ClassType(new Identifier(currentToken),scanner.position.deepClone());
+			else  temp = new ClassType(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 			acceptIt();
 			if(currentToken.kind==TokenKind.lbrack){
 			acceptIt();
@@ -268,7 +271,7 @@ public class Parser {
 		Reference root;
 		if(currentToken.kind==TokenKind.thiz||currentToken.kind==TokenKind.id){
 			if(currentToken.kind==TokenKind.thiz)root=new ThisRef(scanner.position.deepClone());
-			else root=new IdRef(new Identifier(currentToken),scanner.position.deepClone());
+			else root=new IdRef(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 			acceptIt();
 		}else {
 			parseError("was expecting this or an id and found "+currentToken.toString()+"\n");
@@ -276,7 +279,7 @@ public class Parser {
 		}
 		while(currentToken.kind==TokenKind.dot){
 			acceptIt();
-			root=new QualifiedRef(root,new Identifier(currentToken),scanner.position.deepClone());
+			root=new QualifiedRef(root,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 			accept(TokenKind.id);
 			
 		}
@@ -290,7 +293,7 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private IndexedRef parseArrayReference() throws SyntaxError {
-		IdRef idr = new IdRef(new Identifier(currentToken),scanner.position.deepClone());
+		IdRef idr = new IdRef(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 		accept(TokenKind.id);
 		accept(TokenKind.lbrack);
 		Expression expr = parseExpression();
@@ -312,15 +315,17 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private Statement parseStatement() throws SyntaxError {
+		SourcePosition p;
 		switch(currentToken.kind){
 		case lcurly: //block statement
 			acceptIt();
+			p=scanner.position.deepClone();
 			StatementList sllcurly = new StatementList();
 			while(currentToken.kind!=TokenKind.rcurly){
 			sllcurly.add(parseStatement());	
 			}
 			acceptIt();//getting rcurly
-			return new BlockStmt(sllcurly,scanner.position.deepClone());
+			return new BlockStmt(sllcurly,p);
 		case bool: // vardecl statement
 			acceptIt();
 			VarDecl vdbool = new VarDecl(new BaseType(TypeKind.BOOLEAN,scanner.position.deepClone()),currentToken.spelling,scanner.position.deepClone());
@@ -342,28 +347,31 @@ public class Parser {
 		case iff: //IfStmt
 			acceptIt();
 			accept(TokenKind.lparen);
+			p=scanner.position.deepClone();
 			Expression eiff = parseExpression();
 			accept(TokenKind.rparen);
 			Statement s0iff =parseStatement();
 			if(currentToken.kind==TokenKind.elsz){
 				acceptIt();
+				SourcePosition innerp=scanner.position.deepClone();
 				Statement s1iff=parseStatement();
-				return new IfStmt(eiff,s0iff,s1iff,scanner.position.deepClone());
+				return new IfStmt(eiff,s0iff,s1iff,innerp);
 			}
-			return new IfStmt(eiff,s0iff,scanner.position.deepClone());
+			return new IfStmt(eiff,s0iff,p);
 		case wile: //while statement
 			acceptIt();
+			p=scanner.position.deepClone();
 			accept(TokenKind.lparen);
 			Expression ewile=parseExpression();
 			accept(TokenKind.rparen);
 			Statement swile=parseStatement();
-			return new WhileStmt(ewile,swile,scanner.position.deepClone());
+			return new WhileStmt(ewile,swile,p);
 		case thiz: //either assignStmt or CallStmt
 			acceptIt();
 			Reference rootthiz = new ThisRef(scanner.position.deepClone()); //will always start with reference
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
-				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken),scanner.position.deepClone());
+				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.id);
 			}
 			//now I have full reference made
@@ -408,7 +416,7 @@ public class Parser {
 			
 			switch(currentToken.kind){
 			case id: //varDeclStmt
-				Type tidid=new ClassType(new Identifier(idroot),scanner.position.deepClone());
+				Type tidid=new ClassType(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone());
 				VarDecl vdidid=new VarDecl(tidid,currentToken.spelling,scanner.position.deepClone());
 				acceptIt();
 				accept(TokenKind.equals);
@@ -420,7 +428,7 @@ public class Parser {
 				Type tidlbrack;
 				if(currentToken.kind==TokenKind.rbrack){//id[] id = Expression; we now know it is varDeclStmt
 					acceptIt();
-					tidlbrack=new ArrayType(new ClassType(new Identifier(idroot),scanner.position.deepClone()),scanner.position.deepClone());
+					tidlbrack=new ArrayType(new ClassType(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone()),scanner.position.deepClone());
 					VarDecl vdidlbrack=new VarDecl(tidlbrack,currentToken.spelling,scanner.position.deepClone());
 					accept(TokenKind.id);
 					accept(TokenKind.equals);
@@ -429,7 +437,7 @@ public class Parser {
 					return new VarDeclStmt(vdidlbrack,eidlbrack,scanner.position.deepClone());
 				}
 				//id[Expression]=Expression; we now know this is IxAssignStmt
-				IdRef idridlbrack=new IdRef(new Identifier(idroot),scanner.position.deepClone());
+				IdRef idridlbrack=new IdRef(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone());
 				Expression eidlbrack=parseExpression();
 				IndexedRef iridlbrack=new IndexedRef(idridlbrack,eidlbrack,scanner.position.deepClone());
 				accept(TokenKind.rbrack);
@@ -438,10 +446,10 @@ public class Parser {
 				accept(TokenKind.semicol);
 				return new IxAssignStmt(iridlbrack,eidlbrack2,scanner.position.deepClone());
 			default://else could be assignStmt, CallStmt
-				Reference rootid=new IdRef(new Identifier(idroot),scanner.position.deepClone());
+				Reference rootid=new IdRef(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone());
 				while(currentToken.kind==TokenKind.dot){
 					acceptIt();
-					rootid=new QualifiedRef(rootid,new Identifier(currentToken),scanner.position.deepClone());
+					rootid=new QualifiedRef(rootid,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 					accept(TokenKind.id);
 				}
 				//now have full reference in rootid
@@ -606,12 +614,12 @@ public class Parser {
 				if(currentToken.kind==TokenKind.lparen){ //NewObjectExpr
 					acceptIt();
 					accept(TokenKind.rparen);
-					e0=new NewObjectExpr(new ClassType(new Identifier(nuid),scanner.position.deepClone()),scanner.position.deepClone());
+					e0=new NewObjectExpr(new ClassType(new Identifier(nuid,scanner.position.deepClone()),scanner.position.deepClone()),scanner.position.deepClone());
 					break;
 				}
 				else{ //NewArrayExpr
 					accept(TokenKind.lbrack);
-					e0=new NewArrayExpr(new ClassType(new Identifier(nuid),scanner.position.deepClone()),parseExpression(),scanner.position.deepClone());
+					e0=new NewArrayExpr(new ClassType(new Identifier(nuid,scanner.position.deepClone()),scanner.position.deepClone()),parseExpression(),scanner.position.deepClone());
 					accept(TokenKind.rbrack);
 					break;
 				}
@@ -621,7 +629,7 @@ public class Parser {
 			Reference rootthiz = new ThisRef(scanner.position.deepClone()); //will always start with reference
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
-				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken),scanner.position.deepClone());
+				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.id);
 			}
 			//now have current Reference
@@ -640,7 +648,7 @@ public class Parser {
 			accept(TokenKind.rparen);
 			break;
 		case id: //RefExpr or CallExpr again
-			Reference rootid = new IdRef(new Identifier(currentToken),scanner.position.deepClone()); //will always start with reference
+			Reference rootid = new IdRef(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone()); //will always start with reference
 			IdRef temp= (IdRef) rootid;
 			acceptIt();
 			if(currentToken.kind==TokenKind.lbrack){//id[Expression] //RefExpr...but Indexed
@@ -651,7 +659,7 @@ public class Parser {
 			}
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
-				rootid=new QualifiedRef(rootid,new Identifier(currentToken),scanner.position.deepClone());
+				rootid=new QualifiedRef(rootid,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.id);
 			}
 			//now have full Ref

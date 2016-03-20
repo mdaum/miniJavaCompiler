@@ -26,15 +26,19 @@ public class IDTable {
 		MemberDecl printStreamMember=new FieldDecl(false,false,new BaseType(TypeKind.VOID,predefPos),"println",predefPos);
 		printStreamMethods.add(new MethodDecl(printStreamMember, printlnParam, new StatementList(), predefPos));
 		ClassDecl printStreamDecl = new ClassDecl("_PrintStream", new FieldDeclList(), printStreamMethods, predefPos);
-		
+		printStreamMember.c=printStreamDecl;//forcing identification here
+		printStreamMethods.get(0).c=printStreamDecl;
 		//now String
 		ClassDecl stringDecl= new ClassDecl("String",new FieldDeclList(),new MethodDeclList(),predefPos);
 		
 		//now System
 		FieldDeclList systemfdl= new FieldDeclList();
 		Token systemToken = new Token(TokenKind.id,"_PrintStream",predefPos);
-		systemfdl.add(new FieldDecl(false,true,new ClassType(new Identifier(systemToken),predefPos),"out",predefPos));
+		Identifier systemfdlID=new Identifier(systemToken,predefPos);
+		systemfdlID.d=printStreamDecl;
+		systemfdl.add(new FieldDecl(false,true,new ClassType(systemfdlID,predefPos),"out",predefPos));
 		ClassDecl systemDecl= new ClassDecl("System",systemfdl,new MethodDeclList(),predefPos);
+		systemfdl.get(0).c=systemDecl;
 		
 		//now add them to current scope
 		try{
@@ -89,6 +93,17 @@ public class IDTable {
 		//we are good, add to current scope
 		currentScope.put(name, decl);
 		
+	}
+	public Declaration retrieve(String id){
+		Declaration d = null;
+		for(int i=(table.size()-1);i>=0;i--){
+			d=table.get(i).get(id);
+			if(d!=null){
+				System.out.println("Retrieved decl "+d.name+"at level "+i);
+				return d;
+			}
+		}
+		return null;
 	}
 	
 	class SyntaxError extends Error{
