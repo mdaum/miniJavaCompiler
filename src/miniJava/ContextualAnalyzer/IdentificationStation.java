@@ -32,9 +32,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	3.Does this always refer to the class you are in?
 
 	 */
-	
-	//TODO need to get rid of \n in errors..... 
 	//TODO fix var x = ClassRef  should be an error
+	//TODO Qualified Ref
 	int levelPassCount;
 	ErrorReporter reporter;
 	private ClassDecl currClass;
@@ -169,7 +168,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub what about strings???
 		Identifier i = type.className;
 		if(i.spelling.equals("_PrintStream")){ //no printstream....question on this pending
-			reporter.reportError("*** Identification error:  _PrintStream is not allowed to be accessed! \n Position"+type.posn);
+			reporter.reportError("*** Identification error:  _PrintStream is not allowed to be accessed! Position: "+type.posn);
 			return null;
 		}
 		Declaration d = arg.table.get(1).get(i.spelling);
@@ -177,7 +176,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			//then check predefined
 			d=arg.table.get(0).get(i.spelling);
 			if(!(d instanceof ClassDecl)){//not in predefined either
-				reporter.reportError("*** Identification error:  "+i.spelling+" cannot be resolved to a type"+"\n Position: "+type.posn);
+				reporter.reportError("*** Identification error:  "+i.spelling+" cannot be resolved to a type "+ "Position: "+type.posn);
 				return null;
 			}
 			if(d.name.equals("String"))type.typeKind=TypeKind.UNSUPPORTED;//predefined String Class
@@ -220,7 +219,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		stmt.val.visit(this, arg);
 		stmt.ref.visit(this, arg);
 		if(stmt.ref.d instanceof MethodDecl){
-			reporter.reportError("*** Identification error:  Cannot assign a method declaration! \n Position: "+stmt.ref.posn);
+			reporter.reportError("*** Identification error:  Cannot assign a method declaration! Position: "+stmt.ref.posn);
 			return null;
 		}
 		return null;
@@ -248,7 +247,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public Object visitReturnStmt(ReturnStmt stmt, IDTable arg) {
 		// TODO Auto-generated method stub NOT TESTED
 		if(stmt.returnExpr!=null && currMethod.type.typeKind.equals(TypeKind.VOID)){
-			reporter.reportError("*** Identification error:  method "+currMethod.name+" should not have a return type! \nPosition:"+stmt.posn);
+			reporter.reportError("*** Identification error:  method "+currMethod.name+" should not have a return type! Position: "+stmt.posn);
 			return null;
 		}
 		if(stmt.returnExpr!=null)stmt.returnExpr.visit(this, arg);
@@ -260,11 +259,11 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.thenStmt instanceof VarDeclStmt){
-			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.thenStmt.posn);
+			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.thenStmt.posn);
 		}
 		else stmt.thenStmt.visit(this, arg);
 		if(stmt.elseStmt instanceof VarDeclStmt){
-			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.elseStmt.posn);
+			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.elseStmt.posn);
 		}
 		else if(stmt.elseStmt != null)stmt.elseStmt.visit(this, arg);
 		return null;
@@ -275,7 +274,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.body instanceof VarDeclStmt){
-			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.body.posn);
+			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.body.posn);
 		}
 		else stmt.body.visit(this, arg);
 		return null;
@@ -357,12 +356,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		String name=ref.id.spelling;
 		Declaration d=arg.retrieve(name);
 		if(d==null){
-			reporter.reportError("*** Identification error:  idRef "+ref.id.spelling+" cannot be resolved, may not be undeclared \nPosition: "+ref.posn);
+			reporter.reportError("*** Identification error:  idRef "+ref.id.spelling+" cannot be resolved, may not be undeclared Position: "+ref.posn);
 			return null;
 		}
 		if(d instanceof LocalDecl){ //scope 3+
 			if(!currDeclaredVars.contains(d.name)){
-				reporter.reportError("*** Identification error:  you cannot reference a variable that is currently being declared \n Position: "+d.posn);
+				reporter.reportError("*** Identification error:  you cannot reference a variable that is currently being declared Position: "+d.posn);
 				return null;
 			}
 			ref.d=d;
@@ -374,11 +373,11 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		if(d instanceof MemberDecl){ //scope 2
 			MemberDecl member=(MemberDecl)d;
 			if(member.isPrivate&&member.c!=currClass){ //private check
-				reporter.reportError("*** Identification error:  cannot access private field/method "+member.name+" of class "+member.c.name+"!! \n Position: "+ref.posn);
+				reporter.reportError("*** Identification error:  cannot access private field/method "+member.name+" of class "+member.c.name+"!! Position: "+ref.posn);
 				return null;
 			}
 			if(currMethod.isStatic&&!(member.isStatic)){//static check...will check qualified part in qualified ref visit
-				reporter.reportError("*** Identification error:  cannot reference non-static member "+member.name+" from static method "+currMethod.name+" \n Position: "+ref.posn);
+				reporter.reportError("*** Identification error:  cannot reference non-static member "+member.name+" from static method "+currMethod.name+" Position: "+ref.posn);
 				return null;
 			}
 			//we should be good at this point

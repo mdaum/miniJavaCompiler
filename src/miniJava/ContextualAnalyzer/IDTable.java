@@ -70,7 +70,7 @@ public class IDTable {
 		for(int i =3;i<table.size();i++){ //cannot hide from parameter and higher if you are local
 			Declaration previousDecl = table.get(i).get(name);
 			if(previousDecl!=null){
-				reporter.reportError("*** Identification error: duplicate variable name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn.toString());
+				reporter.reportError("*** Identification error: duplicate variable name: "+name+" already declared at "+previousDecl.posn+" Position:"+decl.posn.toString());
 				throw new SyntaxError();
 			}
 		} //not found in local or rather local scope not even created yet
@@ -79,7 +79,7 @@ public class IDTable {
 		if(previousDecl!=null){//checking current scope if in scopes 0,1,or 2
 			if(previousDecl instanceof MemberDecl && decl instanceof MemberDecl){//scope 2
 				if(((MemberDecl) previousDecl).c.name.equals(((MemberDecl)decl).c.name)){
-					reporter.reportError("*** Identification error: duplicate member name in same class: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+					reporter.reportError("*** Identification error: duplicate member name in same class: "+name+" already declared at "+previousDecl.posn+" Position:"+decl.posn);
 					throw new SyntaxError();
 				}
 				else{ //we are ok, same member name but different classes
@@ -87,7 +87,7 @@ public class IDTable {
 					return;
 				}
 			}//otherwise we are dealing with scope 1 so class name issues
-			reporter.reportError("*** Identification error: duplicate class name: "+name+" \n already declared at "+previousDecl.posn+"\n Position:"+decl.posn);
+			reporter.reportError("*** Identification error: duplicate class name: "+name+" already declared at "+previousDecl.posn+" Position:"+decl.posn);
 			throw new SyntaxError();
 		}
 		//we are good, add to current scope
