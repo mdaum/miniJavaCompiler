@@ -39,9 +39,11 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	private ClassDecl currClass;
 	private MethodDecl currMethod;
 	ArrayList<String>currDeclaredVars;
+	boolean checkIncompleteRef; //for vardecl incompleteRef edge case
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		try{IDTable t = new IDTable(reporter);
 			levelPassCount=0;
+			checkIncompleteRef=false;
 			this.reporter=reporter;
 			currDeclaredVars=new ArrayList<String>();
 			ast.visit(this, t);
@@ -208,7 +210,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub NOT TESTED
 		stmt.varDecl.type.visit(this, arg);
 		addDeclaration(arg, stmt.varDecl);//add this before going into the expression....handles int x=x+2;
-		stmt.initExp.visit(this, arg);
+		checkIncompleteRef=true;
+		stmt.initExp.visit(this, arg);//if calling idRef we have flag now set...
+		checkIncompleteRef=false;
 		currDeclaredVars.add(stmt.varDecl.name);
 		return null;
 	}
@@ -387,7 +391,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			LinkDump(ref,ref.d);
 			return null;
 		}
-		if(d instanceof ClassDecl){//classname w/o type
+		if(d instanceof ClassDecl){//classname w/o type, but if from varDecl you have error
+			if(checkIncompleteRef){
+				reporter.reportError("*** Identification error: cannot just use a classname in varDecl! Position: "+ref.posn);
+			}
 			ref.d=d;
 			ref.id.d=d;
 			LinkDump(ref.id,ref.id.d);
