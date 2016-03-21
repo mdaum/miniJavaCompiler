@@ -51,10 +51,15 @@ public class Compiler {
 		if(goo!=null){System.out.println("Contextual Analysis ... ");	
 		IdentificationStation i=new IdentificationStation();
 		goo=i.Decorate(goo, reporter);
-		
+		if (reporter.hasErrors()) {
+			System.out.println("INVALID MiniJava");
+			System.exit(4);
+		}
+		//now for typeChecking here....
 		
 		System.out.println("Contextual Analysis complete: ");
 		}
+		
 		if (reporter.hasErrors()) {
 			System.out.println("INVALID MiniJava");
 			System.exit(4);

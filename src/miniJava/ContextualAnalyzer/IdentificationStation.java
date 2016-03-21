@@ -33,7 +33,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	 */
 	
-	//TODO need to make errors identification not termintate program, finish identification through and through 
+	//TODO need to get rid of \n in errors..... 
 	//TODO fix var x = ClassRef  should be an error
 	int levelPassCount;
 	ErrorReporter reporter;
