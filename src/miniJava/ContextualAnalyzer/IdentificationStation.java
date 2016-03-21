@@ -32,6 +32,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	3.Does this always refer to the class you are in?
 
 	 */
+	
+	//TODO need to make errors identification not termintate program, finish identification through and through 
+	//TODO fix var x = ClassRef  should be an error
 	int levelPassCount;
 	ErrorReporter reporter;
 	private ClassDecl currClass;
@@ -51,7 +54,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		}
 	}
 	@Override
-	public Object visitPackage(Package prog, IDTable arg) throws SyntaxError { //goal right now is to get down traversal....
+	public Object visitPackage(Package prog, IDTable arg) { //goal right now is to get down traversal....
 		for (ClassDecl c: prog.classDeclList){
 			addDeclaration(arg,c); //this should finish class level stuff
 		}
@@ -78,7 +81,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitClassDecl(ClassDecl cd, IDTable arg)throws SyntaxError {
+	public Object visitClassDecl(ClassDecl cd, IDTable arg) {
 		if(levelPassCount==0){
 		for(FieldDecl fd: cd.fieldDeclList){ //visiting ie adding fields on first pass
 			fd.c=cd;
@@ -112,7 +115,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitFieldDecl(FieldDecl fd, IDTable arg) throws SyntaxError { //here we add the decl
+	public Object visitFieldDecl(FieldDecl fd, IDTable arg)  { //here we add the decl
 		//System.out.println("hit visitFieldDecl");
 		addDeclaration(arg,fd);	
 		fd.type.visit(this, arg);
@@ -162,20 +165,20 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitClassType(ClassType type, IDTable arg) throws SyntaxError { //Identifier here....
+	public Object visitClassType(ClassType type, IDTable arg) { //Identifier here....
 		// TODO Auto-generated method stub what about strings???
 		Identifier i = type.className;
 		if(i.spelling.equals("_PrintStream")){ //no printstream....question on this pending
-			reporter.reportError("*** _PrintStream is not allowed to be accessed! \n Position"+type.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  _PrintStream is not allowed to be accessed! \n Position"+type.posn);
+			return null;
 		}
 		Declaration d = arg.table.get(1).get(i.spelling);
 		if(!(d instanceof ClassDecl)){
 			//then check predefined
 			d=arg.table.get(0).get(i.spelling);
 			if(!(d instanceof ClassDecl)){//not in predefined either
-				reporter.reportError("*** "+i.spelling+" cannot be resolved to a type"+"\n Position: "+type.posn);
-				throw new SyntaxError();
+				reporter.reportError("*** Identification error:  "+i.spelling+" cannot be resolved to a type"+"\n Position: "+type.posn);
+				return null;
 			}
 			if(d.name.equals("String"))type.typeKind=TypeKind.UNSUPPORTED;//predefined String Class
 		}
@@ -217,8 +220,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		stmt.val.visit(this, arg);
 		stmt.ref.visit(this, arg);
 		if(stmt.ref.d instanceof MethodDecl){
-			reporter.reportError("Cannot assign a method declaration! \n Position: "+stmt.ref.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  Cannot assign a method declaration! \n Position: "+stmt.ref.posn);
+			return null;
 		}
 		return null;
 	}
@@ -245,8 +248,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public Object visitReturnStmt(ReturnStmt stmt, IDTable arg) {
 		// TODO Auto-generated method stub NOT TESTED
 		if(stmt.returnExpr!=null && currMethod.type.typeKind.equals(TypeKind.VOID)){
-			reporter.reportError("*** method "+currMethod.name+" should not have a return type! \nPosition:"+stmt.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  method "+currMethod.name+" should not have a return type! \nPosition:"+stmt.posn);
+			return null;
 		}
 		if(stmt.returnExpr!=null)stmt.returnExpr.visit(this, arg);
 		return null;
@@ -257,15 +260,13 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.thenStmt instanceof VarDeclStmt){
-			reporter.reportError("VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.thenStmt.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.thenStmt.posn);
 		}
-		stmt.thenStmt.visit(this, arg);
+		else stmt.thenStmt.visit(this, arg);
 		if(stmt.elseStmt instanceof VarDeclStmt){
-			reporter.reportError("VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.elseStmt.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.elseStmt.posn);
 		}
-		if(stmt.elseStmt != null)stmt.elseStmt.visit(this, arg);
+		else if(stmt.elseStmt != null)stmt.elseStmt.visit(this, arg);
 		return null;
 	}
 
@@ -274,10 +275,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.body instanceof VarDeclStmt){
-			reporter.reportError("VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.body.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional \nPosition: "+stmt.body.posn);
 		}
-		stmt.body.visit(this, arg);
+		else stmt.body.visit(this, arg);
 		return null;
 	}
 
@@ -357,13 +357,13 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		String name=ref.id.spelling;
 		Declaration d=arg.retrieve(name);
 		if(d==null){
-			reporter.reportError("*** idRef "+ref.id.spelling+" cannot be resolved, may not be undeclared \nPosition: "+ref.posn);
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  idRef "+ref.id.spelling+" cannot be resolved, may not be undeclared \nPosition: "+ref.posn);
+			return null;
 		}
 		if(d instanceof LocalDecl){ //scope 3+
 			if(!currDeclaredVars.contains(d.name)){
-				reporter.reportError("you cannot reference a variable that is currently being declared \n Position: "+d.posn);
-				throw new SyntaxError();
+				reporter.reportError("*** Identification error:  you cannot reference a variable that is currently being declared \n Position: "+d.posn);
+				return null;
 			}
 			ref.d=d;
 			ref.id.d=d;
@@ -374,12 +374,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		if(d instanceof MemberDecl){ //scope 2
 			MemberDecl member=(MemberDecl)d;
 			if(member.isPrivate&&member.c!=currClass){ //private check
-				reporter.reportError("*** cannot access private field/method "+member.name+" of class "+member.c.name+"!! \n Position: "+ref.posn);
-				throw new SyntaxError();
+				reporter.reportError("*** Identification error:  cannot access private field/method "+member.name+" of class "+member.c.name+"!! \n Position: "+ref.posn);
+				return null;
 			}
 			if(currMethod.isStatic&&!(member.isStatic)){//static check...will check qualified part in qualified ref visit
-				reporter.reportError("*** cannot reference non-static member "+member.name+" from static method "+currMethod.name+" \n Position: "+ref.posn);
-				throw new SyntaxError();
+				reporter.reportError("*** Identification error:  cannot reference non-static member "+member.name+" from static method "+currMethod.name+" \n Position: "+ref.posn);
+				return null;
 			}
 			//we should be good at this point
 			ref.d=d;
@@ -396,8 +396,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			return null;
 		}
 		else{//we got a problem
-			reporter.reportError("*** impossible??!!! cannot reach");
-			throw new SyntaxError();
+			reporter.reportError("*** Identification error:  impossible??!!! cannot reach");
+			return null;
 		}
 		
 	}
@@ -444,7 +444,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		try {
 			table.enter(declaration);
 		} catch (Error e) {
-			throw new SyntaxError();
+			
 		}
 	}
 	class SyntaxError extends Error{
