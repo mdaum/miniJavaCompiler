@@ -12,18 +12,24 @@ import miniJava.SyntacticAnalyzer.TokenKind;
 public class IDTable {
 	ArrayList<HashMap<String,Declaration>> table = new ArrayList<HashMap<String,Declaration>>(); //stack of hash tables, nested block structure
 	ErrorReporter reporter;
+	boolean addedPredefMembers;
+	MemberDecl printStreamMember;
+	MemberDecl SystemMember;
 	public IDTable(ErrorReporter e){
 		openScope();//opening predefined level
 		//creating predefined classes...
 		this.reporter=e;
-		
+		this.addedPredefMembers=false;
 		SourcePosition predefPos=new SourcePosition(-1,-1);//predefined sourcePos
+		
+/*		MemberDecl member = new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
+		MethodDecl method = new MethodDecl(member, params, statements, currMemberPosn);*/
 		
 		//starting with _PrintStream
 		MethodDeclList printStreamMethods=new MethodDeclList();
 		ParameterDeclList printlnParam=new ParameterDeclList();
 		printlnParam.add(new ParameterDecl(new BaseType(TypeKind.INT,predefPos),"n", predefPos));
-		MemberDecl printStreamMember=new FieldDecl(false,false,new BaseType(TypeKind.VOID,predefPos),"println",predefPos);
+		printStreamMember=new FieldDecl(false,false,new BaseType(TypeKind.VOID,predefPos),"println",predefPos);
 		printStreamMethods.add(new MethodDecl(printStreamMember, printlnParam, new StatementList(), predefPos));
 		ClassDecl printStreamDecl = new ClassDecl("_PrintStream", new FieldDeclList(), printStreamMethods, predefPos);
 		printStreamMember.c=printStreamDecl;//forcing identification here
@@ -37,6 +43,7 @@ public class IDTable {
 		Identifier systemfdlID=new Identifier(systemToken,predefPos);
 		systemfdlID.d=printStreamDecl;
 		systemfdl.add(new FieldDecl(false,true,new ClassType(systemfdlID,predefPos),"out",predefPos));
+		SystemMember=systemfdl.get(0);
 		ClassDecl systemDecl= new ClassDecl("System",systemfdl,new MethodDeclList(),predefPos);
 		systemfdl.get(0).c=systemDecl;
 		
@@ -53,8 +60,14 @@ public class IDTable {
 	/**
 	 * Throws a new scope on the stack
 	 */
-	public void openScope(){
+	public void openScope(){//also adding predefined Members here....
 		table.add(new HashMap<String,Declaration>());
+		if(table.size()==3&&!addedPredefMembers){
+			enter(printStreamMember);
+			enter(SystemMember);
+			addedPredefMembers=true;
+		}
+		
 	}
 	/**
 	 * pops off top of stack
@@ -102,6 +115,15 @@ public class IDTable {
 				System.out.println("Retrieved decl "+d.name+"at level "+i);
 				return d;
 			}
+		}
+		return null;
+	}
+	public Declaration retrieve(String id,int scope){
+		Declaration d = null;
+		d=table.get(scope).get(id);
+		if(d!=null){
+			System.out.println("Retrieved decl "+d.name+"at level "+scope);
+			return d;
 		}
 		return null;
 	}

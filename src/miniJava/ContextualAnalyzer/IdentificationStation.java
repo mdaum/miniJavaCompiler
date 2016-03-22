@@ -38,11 +38,17 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	ErrorReporter reporter;
 	private ClassDecl currClass;
 	private MethodDecl currMethod;
+	private ClassDecl currQualifiedClass;
 	ArrayList<String>currDeclaredVars;
+	boolean checkingMethodfromExpr;//
+	boolean checkingMethodfromStmt;
+	boolean inQRef;
 	boolean checkIncompleteRef; //for vardecl incompleteRef edge case
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		try{IDTable t = new IDTable(reporter);
 			levelPassCount=0;
+			checkingMethodfromExpr=false;
+			checkingMethodfromStmt=false;
 			checkIncompleteRef=false;
 			this.reporter=reporter;
 			currDeclaredVars=new ArrayList<String>();
@@ -171,7 +177,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		Identifier i = type.className;
 		if(i.spelling.equals("_PrintStream")){ //no printstream....question on this pending
 			reporter.reportError("*** Identification error:  _PrintStream is not allowed to be accessed! Position: "+type.posn);
-			return null;
+			throw new SyntaxError();
 		}
 		Declaration d = arg.table.get(1).get(i.spelling);
 		if(!(d instanceof ClassDecl)){
@@ -179,7 +185,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			d=arg.table.get(0).get(i.spelling);
 			if(!(d instanceof ClassDecl)){//not in predefined either
 				reporter.reportError("*** Identification error:  "+i.spelling+" cannot be resolved to a type "+ "Position: "+type.posn);
-				return null;
+				throw new SyntaxError();
 			}
 			if(d.name.equals("String"))type.typeKind=TypeKind.UNSUPPORTED;//predefined String Class
 		}
@@ -224,7 +230,11 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		stmt.ref.visit(this, arg);
 		if(stmt.ref.d instanceof MethodDecl){
 			reporter.reportError("*** Identification error:  Cannot assign a method declaration! Position: "+stmt.ref.posn);
-			return null;
+			throw new SyntaxError();
+		}
+		if(stmt.val instanceof RefExpr){ //wanna hand off pointer
+			stmt.ref.d=((RefExpr)stmt.val).ref.d;
+			LinkDump(stmt.ref,stmt.ref.d);
 		}
 		return null;
 	}
@@ -240,7 +250,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	@Override
 	public Object visitCallStmt(CallStmt stmt, IDTable arg) {
 		// TODO Auto-generated method stub NOT TESTED
+		checkingMethodfromStmt=true;
 		stmt.methodRef.visit(this, arg);
+		checkingMethodfromStmt=false;
 		for(Expression e : stmt.argList){
 			e.visit(this, arg);
 		}
@@ -252,7 +264,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub NOT TESTED
 		if(stmt.returnExpr!=null && currMethod.type.typeKind.equals(TypeKind.VOID)){
 			reporter.reportError("*** Identification error:  method "+currMethod.name+" should not have a return type! Position: "+stmt.posn);
-			return null;
+			throw new SyntaxError();
 		}
 		if(stmt.returnExpr!=null)stmt.returnExpr.visit(this, arg);
 		return null;
@@ -264,10 +276,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		stmt.cond.visit(this, arg);
 		if(stmt.thenStmt instanceof VarDeclStmt){
 			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.thenStmt.posn);
+			throw new SyntaxError();
 		}
 		else stmt.thenStmt.visit(this, arg);
 		if(stmt.elseStmt instanceof VarDeclStmt){
 			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.elseStmt.posn);
+			throw new SyntaxError();
 		}
 		else if(stmt.elseStmt != null)stmt.elseStmt.visit(this, arg);
 		return null;
@@ -279,6 +293,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		stmt.cond.visit(this, arg);
 		if(stmt.body instanceof VarDeclStmt){
 			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.body.posn);
+			throw new SyntaxError();
 		}
 		else stmt.body.visit(this, arg);
 		return null;
@@ -309,7 +324,9 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	@Override
 	public Object visitCallExpr(CallExpr expr, IDTable arg) {
 		//NOT TESTED
+		checkingMethodfromExpr=true;
 		expr.functionRef.visit(this, arg);
+		checkingMethodfromExpr=false;
 		for(Expression e : expr.argList){
 			e.visit(this, arg);
 		}
@@ -338,10 +355,64 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitQualifiedRef(QualifiedRef ref, IDTable arg) { //have no clue yet ughhhh
+	public Object visitQualifiedRef(QualifiedRef q, IDTable arg) { //have no clue yet ughhhh
 		// TODO Auto-generated method stub
-		System.out.println("Hit unimplemented Qualified Ref");	
-		return null;
+		inQRef=true;
+		RefKind parent=(RefKind)q.ref.visit(this, arg);
+		if(q.ref.d!=null){
+			if(q.ref.d.type instanceof ArrayType){
+				reporter.reportError("*** Identification Error: cannot access an array member! Position "+q.posn);
+				throw new SyntaxError();
+			}
+			else if(q.ref.d.type instanceof BaseType){
+				reporter.reportError("*** Identification Error: not referencing "+q.id.spelling+" from an instance of a class Position: "+q.posn);
+				throw new SyntaxError();
+			}
+			else{//ClassType
+					
+				if(parent==RefKind.Static){
+					currQualifiedClass=(ClassDecl)q.ref.d;
+					q.id.visit(this,arg);
+					if(q.id.d!=null){
+						MemberDecl m = (MemberDecl)q.id.d;
+						if(m.isPrivate||!(m.isStatic)){
+							reporter.reportError("*** Identification Error: cannot access class member "+q.id.spelling+" b/c it is either not static or it is private. Position: "+q.id.posn);
+							throw new SyntaxError();
+						}
+					}
+					currQualifiedClass=null;
+				}
+				if(parent==RefKind.This){
+					currQualifiedClass=currClass;
+					q.id.visit(this, arg);
+				}
+				if(parent==RefKind.Instance){ //check private here
+					currQualifiedClass=(ClassDecl) arg.retrieve(((ClassType)q.ref.d.type).className.spelling);
+					q.id.visit(this,arg);//come back here
+					if(q.id.d!=null){
+						MemberDecl m=(MemberDecl) q.id.d;
+						if(m.isPrivate && currQualifiedClass!=currClass){
+							reporter.reportError("*** Identification Error: Cannot access private member of class "+currQualifiedClass.name+" Position: "+q.posn);
+						throw new SyntaxError();
+						}
+					}
+				}
+				currQualifiedClass=null;
+/*				if((checkingMethodfromExpr||checkingMethodfromStmt)&&q.id.d!=null){
+					if(!(q.id.d instanceof MethodDecl)){
+						reporter.reportError("*** Identification Error: method ref "+q.id.spelling+" is not a method! Position: "+q.id.posn);
+					}
+					else{
+						if(q.id.d instanceof MethodDecl){
+							reporter.reportError("*** Identification Error: method ref "+q.id.spelling+" is being called without invoking! Not a field! Position: "+q.id.posn);
+						}
+					}
+				}*/
+			}
+		}
+		q.d=q.id.d;
+		if(q.d!=null)LinkDump(q,q.id.d); //this is it!
+		return RefKind.Instance;
 	}
 
 	@Override
@@ -351,7 +422,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		ref.idRef.visit(this, arg);
 		ref.d=ref.idRef.d;
 		LinkDump(ref,ref.d);
-		return null;
+		return RefKind.Instance;
 	}
 
 	@Override
@@ -361,49 +432,51 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		Declaration d=arg.retrieve(name);
 		if(d==null){
 			reporter.reportError("*** Identification error:  idRef "+ref.id.spelling+" cannot be resolved, may not be undeclared Position: "+ref.posn);
-			return null;
+			throw new SyntaxError();
 		}
 		if(d instanceof LocalDecl){ //scope 3+
 			if(!currDeclaredVars.contains(d.name)){
 				reporter.reportError("*** Identification error:  you cannot reference a variable that is currently being declared Position: "+d.posn);
-				return null;
+				throw new SyntaxError();
 			}
 			ref.d=d;
 			ref.id.d=d;
 			LinkDump(ref.id,ref.id.d);
 			LinkDump(ref,ref.d);
-			return null;
+			return RefKind.Instance;
 		}
 		if(d instanceof MemberDecl){ //scope 2
 			MemberDecl member=(MemberDecl)d;
 			if(member.isPrivate&&member.c!=currClass){ //private check
 				reporter.reportError("*** Identification error:  cannot access private field/method "+member.name+" of class "+member.c.name+"!! Position: "+ref.posn);
-				return null;
+				throw new SyntaxError();
 			}
 			if(currMethod.isStatic&&!(member.isStatic)){//static check...will check qualified part in qualified ref visit
 				reporter.reportError("*** Identification error:  cannot reference non-static member "+member.name+" from static method "+currMethod.name+" Position: "+ref.posn);
-				return null;
+				throw new SyntaxError();
 			}
 			//we should be good at this point
 			ref.d=d;
 			ref.id.d=d;
 			LinkDump(ref.id,ref.id.d);
 			LinkDump(ref,ref.d);
-			return null;
+			return RefKind.Instance;
 		}
 		if(d instanceof ClassDecl){//classname w/o type, but if from varDecl you have error
-			if(checkIncompleteRef){
+			if(checkIncompleteRef&&!inQRef){
 				reporter.reportError("*** Identification error: cannot just use a classname in varDecl! Position: "+ref.posn);
+				throw new SyntaxError();
 			}
 			ref.d=d;
 			ref.id.d=d;
 			LinkDump(ref.id,ref.id.d);
 			LinkDump(ref,ref.d);
-			return null;
+			return RefKind.Static;
 		}
 		else{//we got a problem
 			reporter.reportError("*** Identification error:  impossible??!!! cannot reach");
-			return null;
+			throw new SyntaxError();
+			
 		}
 		
 	}
@@ -413,13 +486,26 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		// TODO Auto-generated method stub 	NOT TESTED
 		ref.d=currClass;
 		LinkDump(ref,ref.d);
-		return null;
+		return RefKind.This;
 	}
 
 	@Override
-	public Object visitIdentifier(Identifier id, IDTable arg) {//I handle Ids in other places
+	public Object visitIdentifier(Identifier id, IDTable arg) {//Only visiting from qualifiedRef
 		// TODO Auto-generated method stub
-		System.out.println("Shouldn't have hit Identifier!!");
+		Declaration d = arg.retrieve(id.spelling,2);
+		if(d==null){
+			reporter.reportError("*** Identification Error: cannot find id "+id.spelling+" in scoped table! Position: "+id.posn);
+			throw new SyntaxError();
+		}
+		else if(!(d instanceof MemberDecl)||((MemberDecl)d).c!=currQualifiedClass){
+			reporter.reportError("*** Identification Error: not referencing member "+ d.name+" of class "+currQualifiedClass.name+" or class does not exist! Position: "+id.posn);
+			throw new SyntaxError();
+		}
+		else {
+			id.d=d;
+			LinkDump(id,d);
+		}
+		
 		return null;
 	}
 

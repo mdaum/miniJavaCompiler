@@ -47,6 +47,7 @@ public class Compiler {
 */		
 		AST goo=parser.parse();
 		ASTDisplay display= new ASTDisplay();
+		//display.showTree(goo);
 		System.out.print("Syntactic analysis complete:  ");
 		if(goo!=null){System.out.println("Contextual Analysis ... ");	
 		IdentificationStation i=new IdentificationStation();
