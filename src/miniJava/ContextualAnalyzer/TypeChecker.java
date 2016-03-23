@@ -1,15 +1,25 @@
 package miniJava.ContextualAnalyzer;
 
+import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 
 public class TypeChecker implements Visitor<Object,Type> {
-
+	ErrorReporter reporter;
+	AST ast;
+	public TypeChecker(AST ast,ErrorReporter reporter ){
+		this.reporter=reporter;
+		this.ast=ast;
+	}
+	public void typeCheck(){
+		ast.visit(this, null);
+	}
+	
 	@Override
 	public Type visitPackage(Package prog, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
-	}
+			return null;
+		}
 
 	@Override
 	public Type visitClassDecl(ClassDecl cd, Object arg) {
@@ -170,17 +180,17 @@ public class TypeChecker implements Visitor<Object,Type> {
 	@Override
 	public Type visitThisRef(ThisRef ref, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return ref.d.type;
 	}
 
 	@Override
-	public Type visitIdentifier(Identifier id, Object arg) {
+	public Type visitIdentifier(Identifier id, Object arg) { //pass on type
 		// TODO Auto-generated method stub
-		return null;
+		return id.d.type.visit(this, null);
 	}
 
 	@Override
-	public Type visitOperator(Operator op, Object arg) {
+	public Type visitOperator(Operator op, Object arg) { //will handle in binary expr
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -188,19 +198,19 @@ public class TypeChecker implements Visitor<Object,Type> {
 	@Override
 	public Type visitIntLiteral(IntLiteral num, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return new BaseType(TypeKind.INT,num.posn);
 	}
 
 	@Override
 	public Type visitBooleanLiteral(BooleanLiteral bool, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return new BaseType(TypeKind.BOOLEAN,bool.posn);
 	}
 
 	@Override
 	public Type visitNullLiteral(NullLiteral nullLiteral, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return new BaseType(TypeKind.NULL,nullLiteral.posn);
 	}
 
 

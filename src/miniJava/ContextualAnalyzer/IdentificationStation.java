@@ -6,6 +6,8 @@ import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 import miniJava.ContextualAnalyzer.IDTable.SyntaxError;
+import miniJava.SyntacticAnalyzer.Token;
+import miniJava.SyntacticAnalyzer.TokenKind;
 
 
 public class IdentificationStation implements Visitor<IDTable,Object>{
@@ -486,6 +488,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public Object visitThisRef(ThisRef ref, IDTable arg) {//2ez
 		// TODO Auto-generated method stub 	NOT TESTED
 		ref.d=currClass;
+		Token ClassToken= new Token(TokenKind.id,currClass.name,currClass.posn);
+		ref.d.type=new ClassType(new Identifier(ClassToken,ClassToken.posn),ClassToken.posn);//for type checking...
 		LinkDump(ref,ref.d);
 		return RefKind.This;
 	}
