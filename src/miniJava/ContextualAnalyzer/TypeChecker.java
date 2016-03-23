@@ -3,13 +3,16 @@ package miniJava.ContextualAnalyzer;
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.SyntacticAnalyzer.SourcePosition;
 
 public class TypeChecker implements Visitor<Object,Type> {
 	ErrorReporter reporter;
 	AST ast;
+	Type genError;
 	public TypeChecker(AST ast,ErrorReporter reporter ){
 		this.reporter=reporter;
 		this.ast=ast;
+		this.genError=new BaseType(TypeKind.ERROR,new SourcePosition());
 	}
 	public void typeCheck(){
 		ast.visit(this, null);
@@ -54,19 +57,19 @@ public class TypeChecker implements Visitor<Object,Type> {
 	@Override
 	public Type visitBaseType(BaseType type, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return type;
 	}
 
 	@Override
 	public Type visitClassType(ClassType type, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return type;
 	}
 
 	@Override
 	public Type visitArrayType(ArrayType type, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		return type.eltType.visit(this, null);
 	}
 
 	@Override
@@ -168,13 +171,28 @@ public class TypeChecker implements Visitor<Object,Type> {
 	@Override
 	public Type visitIndexedRef(IndexedRef ref, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		Type toReturn=null;
+		Type e=ref.indexExpr.visit(this,null);
+		Type r = ref.idRef.visit(this, arg);
+		if(e.typeKind==TypeKind.ERROR||r.typeKind==TypeKind.ERROR||r.typeKind==TypeKind.UNSUPPORTED||e.typeKind==TypeKind.UNSUPPORTED){
+			toReturn=genError;
+		}
+		else if(e.typeKind!=TypeKind.INT){
+			toReturn=genError;
+			reporter.reportError("*** Type Checking Error: Cannot have a "+e.typeKind+" as an index! Position: "+ref.indexExpr.posn);
+		}
+		else toReturn=r;
+		return toReturn;
 	}
 
 	@Override
 	public Type visitIdRef(IdRef ref, Object arg) {
 		// TODO Auto-generated method stub
-		return null;
+		Type id = ref.id.visit(this, null);
+		if(id.typeKind==TypeKind.UNSUPPORTED||id.typeKind==TypeKind.ERROR){
+			return genError; //will check error all the way up...
+		}
+		return id;
 	}
 
 	@Override
