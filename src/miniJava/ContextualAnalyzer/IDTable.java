@@ -65,7 +65,7 @@ public class IDTable {
 	public void openScope(){//also adding predefined Members here....
 		table.add(new HashMap<String,Declaration>());
 		if(table.size()==3&&!addedPredefMembers){
-			enter(printStreamMember);
+			enter(printStreamDecl.methodDeclList.get(0));
 			enter(SystemMember);
 			addedPredefMembers=true;
 		}

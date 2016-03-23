@@ -11,31 +11,7 @@ import miniJava.SyntacticAnalyzer.TokenKind;
 
 
 public class IdentificationStation implements Visitor<IDTable,Object>{
-	/*General Notes for traversal:
-	Look at DisplayAST.java, super helpful stuff there.
-	So we need to make a data structure (maybe array of hash maps?) in order to track our id process
-	openscope and closescope can be choosing which hash map we are messing with
-	then we can shimmy down AST just like DisplayAST and we can start populating table instead of printing..
-	IMPORTANT: Check if this traverses in a way that can handle local decl vs class and member decls!!
-	for above: check this....https://en.wikipedia.org/wiki/Tree_traversal#In-order
-	UPDATE: level-order for two levels, because the contents of methods should be read in order
-	linking should happen on this pass
-	this identification station will implemement Visitor<idtable structure, Object>
-	so, every visit method will look like: public Object visitXXX(XXX name, idtable structure) and will return null
-	pass the idtable down each level of traversal and it will become populated*/
 	
-	
-	/*
-	 Running questions:
-	 1. For fields and params do I need to enter in all decls b4 checking type of each? can't i do it sequentially??
-	 sequentially for now...
-	 2.what if someone wants to create their own _PrintStream class? would we need to restrict that? Or would we just allow it to exist just like we would allow someone to create their own String class...thanks!
-		(its in scope 1 not 0 so its not using an instance of the _PrintStream or String in scope 0) for now just restricting _PrintStream
-	3.Does this always refer to the class you are in?
-
-	 */
-	//TODO fix var x = ClassRef  should be an error
-	//TODO Qualified Ref
 	int levelPassCount;
 	ErrorReporter reporter;
 	private ClassDecl currClass;
@@ -155,7 +131,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitParameterDecl(ParameterDecl pd, IDTable arg) {
-		// TODO Auto-generated method stub
+		
 		pd.type.visit(this, arg);//checking type
 		//System.out.println(pd.name+" of type "+pd.type.typeKind.toString()+" is ok.");
 		addDeclaration(arg, pd);
@@ -165,19 +141,16 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitVarDecl(VarDecl decl, IDTable arg) {//will handle in varDeclStatement
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visitBaseType(BaseType type, IDTable arg) { //don't care doesn't point anywhere
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visitClassType(ClassType type, IDTable arg) { //Identifier here....
-		// TODO Auto-generated method stub what about strings???
 		Identifier i = type.className;
 		if(i.spelling.equals("_PrintStream")){ //no printstream....question on this pending
 			reporter.reportError("*** Identification error:  _PrintStream is not allowed to be accessed! Position: "+type.posn);
@@ -206,7 +179,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitBlockStmt(BlockStmt stmt, IDTable arg) {
-		// TODO Auto-generated method stub NOT TESTED
 		arg.openScope();//new scope added
 		for(Statement s: stmt.sl){
 			s.visit(this, arg);
@@ -217,7 +189,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitVardeclStmt(VarDeclStmt stmt, IDTable arg) {//working on this...
-		// TODO Auto-generated method stub NOT TESTED
 		stmt.varDecl.type.visit(this, arg);
 		addDeclaration(arg, stmt.varDecl);//add this before going into the expression....handles int x=x+2;
 		checkIncompleteRef=true;
@@ -229,7 +200,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitAssignStmt(AssignStmt stmt, IDTable arg) {
-		// TODO Auto-generated method stub NOT TESTED
 		stmt.val.visit(this, arg);
 		stmt.ref.visit(this, arg);
 		if(stmt.ref.d instanceof MethodDecl){
@@ -245,7 +215,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitIxAssignStmt(IxAssignStmt stmt, IDTable arg) {//questions here!!
-		// TODO Auto-generated method stub
 		stmt.val.visit(this, arg);
 		stmt.ixRef.visit(this, arg);
 		return null;
@@ -253,10 +222,13 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitCallStmt(CallStmt stmt, IDTable arg) {
-		// TODO Auto-generated method stub NOT TESTED
 		checkingMethodfromStmt=true;
 		stmt.methodRef.visit(this, arg);
 		checkingMethodfromStmt=false;
+		if(!(stmt.methodRef.d instanceof MethodDecl)){
+			reporter.reportError("*** IdentificationError: not using a method in a call! Position: "+stmt.posn);
+			throw new SyntaxError();
+		}
 		for(Expression e : stmt.argList){
 			e.visit(this, arg);
 		}
@@ -265,7 +237,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	
 	@Override
 	public Object visitReturnStmt(ReturnStmt stmt, IDTable arg) {
-		// TODO Auto-generated method stub NOT TESTED
 		if(stmt.returnExpr!=null && currMethod.type.typeKind.equals(TypeKind.VOID)){
 			reporter.reportError("*** Identification error:  method "+currMethod.name+" should not have a return type! Position: "+stmt.posn);
 			throw new SyntaxError();
@@ -276,7 +247,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitIfStmt(IfStmt stmt, IDTable arg) {
-		// TODO Auto-generated method stub NOT TESTED
 		stmt.cond.visit(this, arg);
 		if(stmt.thenStmt instanceof VarDeclStmt){
 			reporter.reportError("*** Identification error:  VarDeclStmt cannot be the only statement following conditional Position: "+stmt.thenStmt.posn);
@@ -331,6 +301,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		checkingMethodfromExpr=true;
 		expr.functionRef.visit(this, arg);
 		checkingMethodfromExpr=false;
+		if(!(expr.functionRef.d instanceof MethodDecl)){
+			reporter.reportError("*** IdentificationError: not using a method in a call! Position: "+expr.posn);
+			throw new SyntaxError();
+		}
 		for(Expression e : expr.argList){
 			e.visit(this, arg);
 		}
@@ -339,7 +313,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitLiteralExpr(LiteralExpr expr, IDTable arg) { //don't care?
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -360,13 +333,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitQualifiedRef(QualifiedRef q, IDTable arg) { //have no clue yet ughhhh
-		// TODO Auto-generated method stub
 		inQRef=true;
-	/*	Declaration testingforMethod=arg.retrieve(q.id.spelling, 2, currClass, currMethod, currQualifiedClass);
-		if(!checkingMethodfromExpr&&!checkingMethodfromStmt&&testingforMethod instanceof MethodDecl){
-			reporter.reportError("Method call without invocation!");
-			throw new SyntaxError();
-		}*/
 		
 		RefKind parent=(RefKind)q.ref.visit(this, arg);
 		if(q.ref.d!=null){
@@ -430,7 +397,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitIdRef(IdRef ref, IDTable arg) {//will deal with id not called in qualified here....
-		// TODO Auto-generated method stub
 		String name=ref.id.spelling;
 		Declaration d=arg.retrieve(name,currClass,currMethod,currQualifiedClass);
 		if(d==null){
@@ -450,10 +416,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		}
 		if(d instanceof MemberDecl){ //scope 2
 			MemberDecl member=(MemberDecl)d;
-/*			if(member.isPrivate&&member.c!=currClass){ //private check not needed here I guess?
-				reporter.reportError("*** Identification error:  cannot access private field/method "+member.name+" of class "+member.c.name+"!! Position: "+ref.posn);
-				throw new SyntaxError();
-			}*/
 			if(currMethod.isStatic&&!(member.isStatic)){//static check...will check qualified part in qualified ref visit
 				reporter.reportError("*** Identification error:  cannot reference non-static member "+member.name+" from static method "+currMethod.name+" Position: "+ref.posn);
 				throw new SyntaxError();
@@ -485,8 +447,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitThisRef(ThisRef ref, IDTable arg) {//2ez
-		// TODO Auto-generated method stub 	NOT TESTED
+	public Object visitThisRef(ThisRef ref, IDTable arg) {
 		ref.d=currClass;
 		Token ClassToken= new Token(TokenKind.id,currClass.name,currClass.posn);
 		ref.d.type=new ClassType(new Identifier(ClassToken,ClassToken.posn),ClassToken.posn);//for type checking...
@@ -496,7 +457,6 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitIdentifier(Identifier id, IDTable arg) {//Only visiting from qualifiedRef
-		// TODO Auto-generated method stub
 		Declaration d = arg.retrieve(id.spelling,2,currClass,currMethod,currQualifiedClass);
 		if(d==null){
 			reporter.reportError("*** Identification Error: cannot find id "+id.spelling+" in scoped table! Position: "+id.posn);
@@ -515,26 +475,22 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitOperator(Operator op, IDTable arg) { //don't care?
-		// TODO Auto-generated method stub
+	public Object visitOperator(Operator op, IDTable arg) { //don't care
 		return null;
 	}
 
 	@Override
-	public Object visitIntLiteral(IntLiteral num, IDTable arg) { //don't care?
-		// TODO Auto-generated method stub
+	public Object visitIntLiteral(IntLiteral num, IDTable arg) { //don't care
 		return null;
 	}
 
 	@Override
-	public Object visitBooleanLiteral(BooleanLiteral bool, IDTable arg) { //don't care?
-		// TODO Auto-generated method stub
+	public Object visitBooleanLiteral(BooleanLiteral bool, IDTable arg) { //don't care
 		return null;
 	}
 
 	@Override
-	public Object visitNullLiteral(NullLiteral nullLiteral, IDTable arg) { //don't care?
-		// TODO Auto-generated method stub
+	public Object visitNullLiteral(NullLiteral nullLiteral, IDTable arg) { //don't care
 		return null;
 	}
 	public void addDeclaration(IDTable table, Declaration declaration)throws SyntaxError {
