@@ -165,20 +165,19 @@ private void enterMember(Declaration decl) {
 		MemberDecl check=(MemberDecl)d.get(0);
 		if(d.size()==1&&check.c!=currQClass&&currQClass!=null)return printStreamDecl;//returning classDecl to throw error
 		if(currQClass!=null){
-			for (Declaration declaration : d) {//we know there are dups!
+			for (Declaration declaration : d) {
 				MemberDecl m=(MemberDecl)declaration;
 				if(m.c==currQClass)return m;
 			}
 		}
 		else{
-			for (Declaration declaration : d) {//we know there are dups!
+			for (Declaration declaration : d) {
 				MemberDecl m=(MemberDecl)declaration;
 				if(m.c==currClass)return m;
 			}
 		}
 		return null;
 	}
-
 	class SyntaxError extends Error{
 		
 		/** The Constant serialVersionUID. */
@@ -195,6 +194,10 @@ private void enterMember(Declaration decl) {
 		}
 		System.out.println();
 		System.out.println("====END TABLE DUMP==== \n");
+		System.out.println("===MEMBER DUMP===");
+		for(String d: members.keySet()){
+			System.out.println(d+": "+members.get(d).size());
+		}
 	}
 	
 }

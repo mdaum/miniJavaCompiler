@@ -43,6 +43,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	boolean checkingMethodfromExpr;//
 	boolean checkingMethodfromStmt;
 	boolean inQRef;
+	boolean hitMethod=false;//used in qualifiedRef
 	ArrayList<Declaration> memberDecls=new ArrayList<Declaration>();
 	boolean checkIncompleteRef; //for vardecl incompleteRef edge case
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
@@ -359,6 +360,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public Object visitQualifiedRef(QualifiedRef q, IDTable arg) { //have no clue yet ughhhh
 		// TODO Auto-generated method stub
 		inQRef=true;
+	/*	Declaration testingforMethod=arg.retrieve(q.id.spelling, 2, currClass, currMethod, currQualifiedClass);
+		if(!checkingMethodfromExpr&&!checkingMethodfromStmt&&testingforMethod instanceof MethodDecl){
+			reporter.reportError("Method call without invocation!");
+			throw new SyntaxError();
+		}*/
+		
 		RefKind parent=(RefKind)q.ref.visit(this, arg);
 		if(q.ref.d!=null){
 			if(q.ref.d.type instanceof ArrayType){
@@ -399,19 +406,12 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					}
 				}
 				currQualifiedClass=null;
-/*				if((checkingMethodfromExpr||checkingMethodfromStmt)&&q.id.d!=null){
-					if(!(q.id.d instanceof MethodDecl)){
-						reporter.reportError("*** Identification Error: method ref "+q.id.spelling+" is not a method! Position: "+q.id.posn);
-					}
-					else{
-						if(q.id.d instanceof MethodDecl){
-							reporter.reportError("*** Identification Error: method ref "+q.id.spelling+" is being called without invoking! Not a field! Position: "+q.id.posn);
-						}
-					}
-				}*/
 			}
 		}
 		q.d=q.id.d;
+		if(q.d instanceof MethodDecl &&!checkingMethodfromExpr&&!checkingMethodfromStmt){
+			reporter.reportError("*** Identification Error: Referencing Method "+q.d.name+" without invokation! Position: "+q.id.posn);
+		}
 		if(q.d!=null)LinkDump(q,q.id.d); //this is it!
 		return RefKind.Instance;
 	}
