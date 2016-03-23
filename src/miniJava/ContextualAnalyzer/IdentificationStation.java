@@ -43,6 +43,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	boolean checkingMethodfromExpr;//
 	boolean checkingMethodfromStmt;
 	boolean inQRef;
+	ArrayList<Declaration> memberDecls=new ArrayList<Declaration>();
 	boolean checkIncompleteRef; //for vardecl incompleteRef edge case
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		try{IDTable t = new IDTable(reporter);
@@ -387,7 +388,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					q.id.visit(this, arg);
 				}
 				if(parent==RefKind.Instance){ //check private here
-					currQualifiedClass=(ClassDecl) arg.retrieve(((ClassType)q.ref.d.type).className.spelling);
+					currQualifiedClass=(ClassDecl) arg.retrieve(((ClassType)q.ref.d.type).className.spelling,currClass,currMethod,currQualifiedClass);
 					q.id.visit(this,arg);//come back here
 					if(q.id.d!=null){
 						MemberDecl m=(MemberDecl) q.id.d;
@@ -426,10 +427,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	}
 
 	@Override
-	public Object visitIdRef(IdRef ref, IDTable arg) {//will deal with idRef not called in qualified here....
+	public Object visitIdRef(IdRef ref, IDTable arg) {//will deal with id not called in qualified here....
 		// TODO Auto-generated method stub
 		String name=ref.id.spelling;
-		Declaration d=arg.retrieve(name);
+		Declaration d=arg.retrieve(name,currClass,currMethod,currQualifiedClass);
 		if(d==null){
 			reporter.reportError("*** Identification error:  idRef "+ref.id.spelling+" cannot be resolved, may not be undeclared Position: "+ref.posn);
 			throw new SyntaxError();
@@ -447,10 +448,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		}
 		if(d instanceof MemberDecl){ //scope 2
 			MemberDecl member=(MemberDecl)d;
-			if(member.isPrivate&&member.c!=currClass){ //private check
+/*			if(member.isPrivate&&member.c!=currClass){ //private check not needed here I guess?
 				reporter.reportError("*** Identification error:  cannot access private field/method "+member.name+" of class "+member.c.name+"!! Position: "+ref.posn);
 				throw new SyntaxError();
-			}
+			}*/
 			if(currMethod.isStatic&&!(member.isStatic)){//static check...will check qualified part in qualified ref visit
 				reporter.reportError("*** Identification error:  cannot reference non-static member "+member.name+" from static method "+currMethod.name+" Position: "+ref.posn);
 				throw new SyntaxError();
@@ -492,7 +493,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	@Override
 	public Object visitIdentifier(Identifier id, IDTable arg) {//Only visiting from qualifiedRef
 		// TODO Auto-generated method stub
-		Declaration d = arg.retrieve(id.spelling,2);
+		Declaration d = arg.retrieve(id.spelling,2,currClass,currMethod,currQualifiedClass);
 		if(d==null){
 			reporter.reportError("*** Identification Error: cannot find id "+id.spelling+" in scoped table! Position: "+id.posn);
 			throw new SyntaxError();

@@ -67,7 +67,7 @@ public class Compiler {
 		}
 		else {
 			System.out.println("valid MiniJava");
-			display.showTree(goo); //only step through a valid MiniJava Tree....
+			//display.showTree(goo); //only step through a valid MiniJava Tree....
 			System.exit(0);
 		}
 	}
