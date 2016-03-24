@@ -40,6 +40,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 		
 		for(MethodDecl m : cd.methodDeclList){
 			m.visit(this, null);
+			hitReturn=false;
 		}
 		return null;
 	}
@@ -66,9 +67,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 			reporter.reportError("*** Type Check Error: non-void method "+md.name+" has to return something! Position: "+md.posn);
 		}
 		else {
-			if(!checkTypeEquivalence(currReturnType, md.type, md.posn)){
-				reporter.reportError("*** Type Check Error: must assign method "+md.name+" a return type of "+md.type+" Position: "+md.posn);
-			}
+			checkTypeEquivalence(currReturnType, md.type, md.posn);
 		}
 		return null;
 	}
@@ -395,9 +394,9 @@ public class TypeChecker implements Visitor<Object,Type> {
 	public boolean checkTypeEquivalence(Type one,Type two, SourcePosition p){
 		boolean toReturn = false;
 		if(one.typeKind==TypeKind.UNSUPPORTED||two.typeKind==TypeKind.UNSUPPORTED){
-			if(one.typeKind==TypeKind.UNSUPPORTED)reporter.reportError("*** Type Check Error: "+one.typeKind+" is an unsupported type. Position: "+p);
-			if(two.typeKind==TypeKind.UNSUPPORTED)reporter.reportError("*** Type Check Error: "+two.typeKind+" is an unsupported type. Position: "+p);
-			toReturn=false;
+			if(one.typeKind==TypeKind.UNSUPPORTED)reporter.reportError("*** Type Check Error: String is an unsupported type. Position: "+p);
+			if(two.typeKind==TypeKind.UNSUPPORTED)reporter.reportError("*** Type Check Error: String is an unsupported type. Position: "+p);
+			return false;
 		}
 		if(one.typeKind==TypeKind.ERROR||two.typeKind==TypeKind.ERROR)return true;
 		if(one instanceof ArrayType &&two instanceof ArrayType){
@@ -410,7 +409,10 @@ public class TypeChecker implements Visitor<Object,Type> {
 			toReturn= ((ClassType)one).className.d.equals(((ClassType)two).className.d);
 		}
 		if(!toReturn){
-			reporter.reportError("*** Type Check Error: Type mismatch: "+one.typeKind+" "+two.typeKind+". Position: "+p);
+			if(one instanceof ClassType && two instanceof ClassType){
+				reporter.reportError("*** Type Check Error: Class "+((ClassType)one).className.spelling+" and Class "+((ClassType)two).className.spelling+" are not the same Class Declaration! Position: "+p);
+			}
+			else reporter.reportError("*** Type Check Error: Type mismatch: "+one.typeKind+" "+two.typeKind+". Position: "+p);
 		}
 		return toReturn;
 	

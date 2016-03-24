@@ -380,6 +380,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		q.d=q.id.d;
 		if(q.d instanceof MethodDecl &&!checkingMethodfromExpr&&!checkingMethodfromStmt){
 			reporter.reportError("*** Identification Error: Referencing Method "+q.d.name+" without invokation! Position: "+q.id.posn);
+			throw new SyntaxError();
 		}
 		if(q.d!=null)LinkDump(q,q.id.d); //this is it!
 		return RefKind.Instance;

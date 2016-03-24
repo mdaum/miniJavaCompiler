@@ -138,7 +138,7 @@ private void enterMember(Declaration decl) {
 	}*/
 	public Declaration retrieve(String id,ClassDecl currClass,MethodDecl currMethod,ClassDecl currQClass){
 		Declaration d = null;
-		for(int i=(table.size()-1);i>=0;i--){
+		for(int i=(table.size()-1);i>=3;i--){ //check params and up
 			d=table.get(i).get(id);
 			if(d!=null){
 				System.out.println("Retrieved decl "+d.name+"at level "+i);
@@ -146,7 +146,17 @@ private void enterMember(Declaration decl) {
 			}
 		}
 		
-		return retrieveMember(id,currClass,currMethod,currQClass);
+		d= retrieveMember(id,currClass,currMethod,currQClass);
+		if(d==null){
+			for(int i=1;i>=0;i--){ //check rest
+				d=table.get(i).get(id);
+				if(d!=null){
+					System.out.println("Retrieved decl "+d.name+"at level "+i);
+					return d;
+				}
+			}
+		}
+		return d;
 	}
 	public Declaration retrieve(String id,int scope,ClassDecl currClass,MethodDecl currMethod,ClassDecl currQClass){
 		if(scope==2)return retrieveMember(id,currClass,currMethod,currQClass);
