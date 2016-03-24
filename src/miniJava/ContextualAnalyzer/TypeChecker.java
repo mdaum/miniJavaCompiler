@@ -136,7 +136,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 	}
 
 	@Override
-	public Type visitIxAssignStmt(IxAssignStmt stmt, Object arg) { //come back
+	public Type visitIxAssignStmt(IxAssignStmt stmt, Object arg) {
 		
 		Type inner = stmt.ixRef.visit(this,null);
 		Type rhs = stmt.val.visit(this, null);
@@ -145,7 +145,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 	}
 
 	@Override
-	public Type visitCallStmt(CallStmt stmt, Object arg) {//coming back
+	public Type visitCallStmt(CallStmt stmt, Object arg) {
 		TypeCheckMethodCall(stmt.methodRef, stmt.argList);
 		return null;
 	}
@@ -303,11 +303,11 @@ public class TypeChecker implements Visitor<Object,Type> {
 	}
 
 	@Override
-	public Type visitQualifiedRef(QualifiedRef ref, Object arg) {//coming back
+	public Type visitQualifiedRef(QualifiedRef ref, Object arg) {//coming back....
 		// TODO Auto-generated method stub 
-		reporter.reportError("*** HIT THAT DRAGON!");
-		System.out.println("HIT QUALIFIED REF!");
-		return null;
+		Type i = ref.d.type;
+		if(i.typeKind==TypeKind.ERROR)return genError;
+		return i;
 	}
 
 	@Override
