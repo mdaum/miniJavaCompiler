@@ -17,6 +17,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	private ClassDecl currClass;
 	private MethodDecl currMethod;
 	private ClassDecl currQualifiedClass;
+	boolean log;
 	ArrayList<String>currDeclaredVars;
 	boolean checkingMethodfromExpr;//
 	boolean checkingMethodfromStmt;
@@ -31,9 +32,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			checkingMethodfromStmt=false;
 			checkIncompleteRef=false;
 			this.reporter=reporter;
+			this.log=false;
 			currDeclaredVars=new ArrayList<String>();
 			ast.visit(this, t);
-			t.printTable();
+			//t.printTable();
 			return ast;
 		}
 		catch(SyntaxError e){
@@ -167,7 +169,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			if(d.name.equals("String"))type.typeKind=TypeKind.UNSUPPORTED;//predefined String Class
 		}
 		i.d=d;
-		LinkDump(i,i.d);
+		LinkDump(i,i.d,log);
 		return null;
 	}
 
@@ -208,7 +210,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		}
 		if(stmt.val instanceof RefExpr){ //wanna hand off pointer
 			stmt.ref.d=((RefExpr)stmt.val).ref.d;
-			LinkDump(stmt.ref,stmt.ref.d);
+			LinkDump(stmt.ref,stmt.ref.d,log);
 		}
 		return null;
 	}
@@ -336,6 +338,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		inQRef=true;
 		
 		RefKind parent=(RefKind)q.ref.visit(this, arg);
+		inQRef=true;
 		if(q.ref.d!=null){
 			if(q.ref.d.type instanceof ArrayType){
 				reporter.reportError("*** Identification Error: cannot access an array member! Position "+q.posn);
@@ -382,7 +385,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			reporter.reportError("*** Identification Error: Referencing Method "+q.d.name+" without invokation! Position: "+q.id.posn);
 			throw new SyntaxError();
 		}
-		if(q.d!=null)LinkDump(q,q.id.d); //this is it!
+		if(q.d!=null)LinkDump(q,q.id.d,log); //this is it!
+		inQRef=false;
 		return RefKind.Instance;
 	}
 
@@ -392,7 +396,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		ref.indexExpr.visit(this, arg);
 		ref.idRef.visit(this, arg);
 		ref.d=ref.idRef.d;
-		LinkDump(ref,ref.d);
+		LinkDump(ref,ref.d,log);
 		return RefKind.Instance;
 	}
 
@@ -411,8 +415,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			}
 			ref.d=d;
 			ref.id.d=d;
-			LinkDump(ref.id,ref.id.d);
-			LinkDump(ref,ref.d);
+			LinkDump(ref.id,ref.id.d,log);
+			LinkDump(ref,ref.d,log);
 			return RefKind.Instance;
 		}
 		if(d instanceof MemberDecl){ //scope 2
@@ -424,8 +428,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			//we should be good at this point
 			ref.d=d;
 			ref.id.d=d;
-			LinkDump(ref.id,ref.id.d);
-			LinkDump(ref,ref.d);
+			LinkDump(ref.id,ref.id.d,log);
+			LinkDump(ref,ref.d,log);
 			return RefKind.Instance;
 		}
 		if(d instanceof ClassDecl){//classname w/o type, but if from varDecl you have error
@@ -435,8 +439,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			}
 			ref.d=d;
 			ref.id.d=d;
-			LinkDump(ref.id,ref.id.d);
-			LinkDump(ref,ref.d);
+			LinkDump(ref.id,ref.id.d,log);
+			LinkDump(ref,ref.d,log);
 			return RefKind.Static;
 		}
 		else{//we got a problem
@@ -452,7 +456,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		ref.d=currClass;
 		Token ClassToken= new Token(TokenKind.id,currClass.name,currClass.posn);
 		ref.d.type=new ClassType(new Identifier(ClassToken,ClassToken.posn),ClassToken.posn);//for type checking...
-		LinkDump(ref,ref.d);
+		LinkDump(ref,ref.d,log);
 		return RefKind.This;
 	}
 
@@ -469,7 +473,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		}
 		else {
 			id.d=d;
-			LinkDump(id,d);
+			LinkDump(id,d,log);
 		}
 		
 		return null;
@@ -507,15 +511,19 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		private static final long serialVersionUID=1L;
 	}
 	
-	public void LinkDump(Identifier i, Declaration d){ //debugging purposes
+	public void LinkDump(Identifier i, Declaration d,boolean doit){ //debugging purposes
+		if(doit){
 		System.out.print("\n ====LINK ALERT==== \n");
 		System.out.println(i.spelling+" at "+"\nPosition "+i.posn+"\n is now linked to "+d.toString()+" "+d.name+" at \n Position: "+d.posn);	
 		System.out.println("====END====");
+		}
 	}
-	public void LinkDump(Reference r, Declaration d){
+	public void LinkDump(Reference r, Declaration d,boolean doit){
+		if(doit){
 		System.out.print("\n ====LINK ALERT==== \n");
 		System.out.println(r.toString()+" at "+"\nPosition "+r.posn+"\n is now linked to "+d.toString()+" "+d.name+" at \n Position: "+d.posn);
 		System.out.println("====END====");
+		}
 	}
 
 }
