@@ -35,7 +35,7 @@ public class IDTable {
 		printStreamMethods.add(new MethodDecl(printStreamMember, printlnParam, new StatementList(), predefPos));
 		printStreamDecl = new ClassDecl("_PrintStream", new FieldDeclList(), printStreamMethods, predefPos);
 		printStreamMember.c=printStreamDecl;//forcing identification here
-		printStreamMethods.get(0).c=printStreamDecl;
+		printStreamMethods.get(0).c=printStreamDecl;//same thing?
 		//now String
 		ClassDecl stringDecl= new ClassDecl("String",new FieldDeclList(),new MethodDeclList(),predefPos);
 		

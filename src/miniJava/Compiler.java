@@ -8,6 +8,7 @@ import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.AbstractSyntaxTrees.ASTDisplay;
 import miniJava.ContextualAnalyzer.IDTable;
 import miniJava.ContextualAnalyzer.IdentificationStation;
+import miniJava.ContextualAnalyzer.TypeChecker;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 import miniJava.SyntacticAnalyzer.Token;
@@ -56,8 +57,8 @@ public class Compiler {
 			System.out.println("INVALID MiniJava");
 			System.exit(4);
 		}
-		//now for typeChecking here....
-		
+		TypeChecker t = new TypeChecker(goo,reporter);
+		t.typeCheck();		
 		System.out.println("Contextual Analysis complete: ");
 		}
 		
