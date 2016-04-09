@@ -145,9 +145,21 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			}
 		}
 		arg.openScope();//now in local vars, level 4
+		int numHit=0;
 		for(Statement s: md.statementList){
 			//System.out.println(s.posn);
 			s.visit(this, arg);
+			numHit++;
+			if(numHit==md.statementList.size()){//on last statement
+				if(!(s instanceof ReturnStmt)){
+					if(md.type.typeKind!=TypeKind.VOID){
+						reporter.reportError("*** Identification Error: last statement in non-void method is not a return statement! Position: "+s.posn);
+						throw new SyntaxError();
+					}//otherwise we add a blank return stmt
+					md.statementList.add(new ReturnStmt( null,s.posn));
+					break;
+				}
+			}
 		}
 		arg.closeScope();//now at params level 3
 		arg.closeScope();//closing params, now at member scope level 2
