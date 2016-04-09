@@ -14,6 +14,7 @@ import miniJava.SyntacticAnalyzer.TokenKind;
 public class IdentificationStation implements Visitor<IDTable,Object>{
 	
 	int levelPassCount;
+	private MethodDecl mainMethod;//used for entry point
 	ErrorReporter reporter;
 	private ClassDecl currClass;
 	private MethodDecl currMethod;
@@ -29,6 +30,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	public AST Decorate(AST ast, ErrorReporter reporter){ //drives identification process
 		try{IDTable t = new IDTable(reporter);
 			levelPassCount=0;
+			mainMethod=null;
 			checkingMethodfromExpr=false;
 			checkingMethodfromStmt=false;
 			checkIncompleteRef=false;
@@ -66,6 +68,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			System.out.println(c.name+" Round 3");
 			currClass=c;
 			c.visit(this, arg);
+		}
+		if(mainMethod==null){
+			reporter.reportError("*** Identification Error: no main method found.");
+			throw new SyntaxError();
 		}
 		return null;
 	}
@@ -122,6 +128,21 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		arg.openScope();//now in params, level 3
 		for(ParameterDecl pd : md.parameterDeclList){
 			pd.visit(this, arg);
+		}
+		if(!md.isPrivate&&md.isStatic&&md.type.typeKind==TypeKind.VOID&&md.name.equals("main")){
+			if(md.parameterDeclList.size()==1 && md.parameterDeclList.get(0).name.equals("args")){
+				if(md.parameterDeclList.get(0).type.typeKind==TypeKind.ARRAY){
+					ArrayType outer = (ArrayType) md.parameterDeclList.get(0).type;
+					if(outer.eltType.typeKind==TypeKind.UNSUPPORTED){//String
+						//we have main method
+						if(mainMethod!=null){
+							reporter.reportError("*** Identification Error: two or more main methods!!");
+							throw new SyntaxError();
+						}
+						else mainMethod=md;
+					}
+				}
+			}
 		}
 		arg.openScope();//now in local vars, level 4
 		for(Statement s: md.statementList){
