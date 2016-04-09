@@ -1,3 +1,3 @@
 package miniJava.ContextualAnalyzer;
 
-public enum RefKind {Static, Instance, This, Array}
+public enum RefKind {Static, Instance, This, Array, ArrayLength}

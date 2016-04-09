@@ -6,6 +6,7 @@ import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 import miniJava.ContextualAnalyzer.IDTable.SyntaxError;
+import miniJava.SyntacticAnalyzer.SourcePosition;
 import miniJava.SyntacticAnalyzer.Token;
 import miniJava.SyntacticAnalyzer.TokenKind;
 
@@ -124,6 +125,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		}
 		arg.openScope();//now in local vars, level 4
 		for(Statement s: md.statementList){
+			//System.out.println(s.posn);
 			s.visit(this, arg);
 		}
 		arg.closeScope();//now at params level 3
@@ -208,10 +210,14 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			reporter.reportError("*** Identification error:  Cannot assign a method declaration! Position: "+stmt.ref.posn);
 			throw new SyntaxError();
 		}
-		if(stmt.val instanceof RefExpr){ //wanna hand off pointer
+		if(stmt.ref.d instanceof FieldDecl && ((FieldDecl)(stmt.ref.d)).isArrayLength){
+			reporter.reportError("*** Identification error: Cannot assign the length of an array! Position: "+stmt.ref.posn);
+			throw new SyntaxError();
+		}
+/*		if(stmt.val instanceof RefExpr){ //wanna hand off pointer
 			stmt.ref.d=((RefExpr)stmt.val).ref.d;
 			LinkDump(stmt.ref,stmt.ref.d,log);
-		}
+		}*/
 		return null;
 	}
 
@@ -341,8 +347,15 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		inQRef=true;
 		if(q.ref.d!=null){
 			if(q.ref.d.type instanceof ArrayType){
+				if(!q.id.spelling.equals("length")){
 				reporter.reportError("*** Identification Error: cannot access an array member! Position "+q.posn);
 				throw new SyntaxError();
+				}
+				FieldDecl len = new FieldDecl(false, false, new BaseType(TypeKind.INT, new SourcePosition()), "length", new SourcePosition());
+				len.isArrayLength=true;
+				q.id.d=len;
+				q.d=len;
+				return RefKind.ArrayLength;
 			}
 			else if(q.ref.d.type instanceof BaseType){
 				reporter.reportError("*** Identification Error: not referencing "+q.id.spelling+" from an instance of a class Position: "+q.posn);
@@ -361,6 +374,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 						}
 					}
 					currQualifiedClass=null;
+				}
+				if(parent==RefKind.ArrayLength){
+					reporter.reportError("*** Identification Error: cannot access ArrayLength. Position: "+q.id.posn);
+					throw new SyntaxError();
 				}
 				if(parent==RefKind.This){
 					currQualifiedClass=currClass;
@@ -456,6 +473,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 		ref.d=currClass;
 		Token ClassToken= new Token(TokenKind.id,currClass.name,currClass.posn);
 		ref.d.type=new ClassType(new Identifier(ClassToken,ClassToken.posn),ClassToken.posn);//for type checking...
+		((ClassType)ref.d.type).className.d=ref.d;
 		LinkDump(ref,ref.d,log);
 		return RefKind.This;
 	}

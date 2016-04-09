@@ -125,12 +125,13 @@ public class TypeChecker implements Visitor<Object,Type> {
 	@Override
 	public Type visitAssignStmt(AssignStmt stmt, Object arg) {
 		
-		if(stmt.ref.d instanceof ClassDecl||stmt.ref.d instanceof MethodDecl){
-			reporter.reportError("*** Type Check Error: cannot use Class or method on lhs of assign stmt! Position: "+stmt.posn);
+		if(stmt.ref.d instanceof MethodDecl){
+			reporter.reportError("*** Type Check Error: cannot use method on lhs of assign stmt! Position: "+stmt.posn);
 			return null;
 		}
 		Type lhs = stmt.ref.visit(this, null);
 		Type rhs = stmt.val.visit(this,null);
+		System.out.println(stmt.posn);
 		checkTypeEquivalence(lhs, rhs, stmt.posn);
 		return null;
 	}
@@ -399,6 +400,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 			return false;
 		}
 		if(one.typeKind==TypeKind.ERROR||two.typeKind==TypeKind.ERROR)return true;
+		if(one.typeKind==TypeKind.NULL||two.typeKind==TypeKind.NULL)return true;
 		if(one instanceof ArrayType &&two instanceof ArrayType){
 			toReturn= checkTypeEquivalence(((ArrayType)one).eltType,((ArrayType)two).eltType,p); //see if this fucks up array of arrays
 		}
