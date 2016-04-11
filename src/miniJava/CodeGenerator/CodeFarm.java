@@ -3,16 +3,16 @@ package miniJava.CodeGenerator;
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.SyntacticAnalyzer.SourcePosition;
 import mJAM.Machine;
 import mJAM.Machine.*;
 
 public class CodeFarm implements Visitor<Object,Object>{
 	private ErrorReporter reporter;
-	
-	public CodeFarm(ErrorReporter reporter){
+	private MethodDecl main;
+	public CodeFarm(ErrorReporter reporter,MethodDecl m){
 		this.reporter=reporter;
-		Machine.initCodeGen();
-		
+		this.main=m;
 	}
 	
 	public void generateCode(AST ast){
@@ -215,6 +215,17 @@ public class CodeFarm implements Visitor<Object,Object>{
 	public Object visitNullLiteral(NullLiteral nullLiteral, Object arg) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private void codeGenError(String e,SourcePosition pos) throws GenError {
+		reporter.reportError("*** code generation error: "+e+". Postion: "+pos);
+		throw new GenError();
+	}
+	
+	class GenError extends Error{
+		
+		/** The Constant serialVersionUID. */
+		private static final long serialVersionUID=1L;
 	}
 
 }

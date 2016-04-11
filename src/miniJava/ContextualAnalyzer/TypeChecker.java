@@ -402,7 +402,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 		if(one.typeKind==TypeKind.ERROR||two.typeKind==TypeKind.ERROR)return true;
 		if(one.typeKind==TypeKind.NULL||two.typeKind==TypeKind.NULL)return true;
 		if(one instanceof ArrayType &&two instanceof ArrayType){
-			toReturn= checkTypeEquivalence(((ArrayType)one).eltType,((ArrayType)two).eltType,p); //see if this fucks up array of arrays
+			toReturn= checkTypeEquivalence(((ArrayType)one).eltType,((ArrayType)two).eltType,p); 
 		}
 		if(one instanceof BaseType && two instanceof BaseType){
 			toReturn= ((BaseType)one).typeKind==((BaseType)two).typeKind;

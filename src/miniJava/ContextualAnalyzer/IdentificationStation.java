@@ -14,7 +14,7 @@ import miniJava.SyntacticAnalyzer.TokenKind;
 public class IdentificationStation implements Visitor<IDTable,Object>{
 	
 	int levelPassCount;
-	private MethodDecl mainMethod;//used for entry point
+	public MethodDecl mainMethod;//used for entry point
 	ErrorReporter reporter;
 	private ClassDecl currClass;
 	private MethodDecl currMethod;

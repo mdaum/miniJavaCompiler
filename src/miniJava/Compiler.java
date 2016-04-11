@@ -67,7 +67,7 @@ public class Compiler {
 				System.out.println("valid MiniJava");
 			}
 			System.out.println("Generating Code...");
-			CodeFarm farm= new CodeFarm(reporter);
+			CodeFarm farm= new CodeFarm(reporter,i.mainMethod);
 			farm.generateCode(goo);
 			if(reporter.hasErrors()){
 				System.out.println("Error During Code Generation");
