@@ -130,7 +130,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			pd.visit(this, arg);
 		}
 		if(!md.isPrivate&&md.isStatic&&md.type.typeKind==TypeKind.VOID&&md.name.equals("main")){
-			if(md.parameterDeclList.size()==1 && md.parameterDeclList.get(0).name.equals("args")){
+			if(md.parameterDeclList.size()==1){
 				if(md.parameterDeclList.get(0).type.typeKind==TypeKind.ARRAY){
 					ArrayType outer = (ArrayType) md.parameterDeclList.get(0).type;
 					if(outer.eltType.typeKind==TypeKind.UNSUPPORTED){//String
