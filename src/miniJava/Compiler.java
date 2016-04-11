@@ -4,15 +4,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
+import mJAM.ObjectFile;
 import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.AbstractSyntaxTrees.ASTDisplay;
-import miniJava.ContextualAnalyzer.IDTable;
+import miniJava.CodeGenerator.CodeFarm;
 import miniJava.ContextualAnalyzer.IdentificationStation;
 import miniJava.ContextualAnalyzer.TypeChecker;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
-import miniJava.SyntacticAnalyzer.Token;
-import miniJava.SyntacticAnalyzer.TokenKind;
+
 
 public class Compiler {
 
@@ -47,10 +47,9 @@ public class Compiler {
 		ASTDisplay display = new ASTDisplay();
 		// display.showTree(goo);
 		System.out.print("Syntactic analysis complete:  ");
-		if (goo != null) {
 			System.out.println("Contextual Analysis ... ");
 			IdentificationStation i = new IdentificationStation();
-			goo = i.Decorate(goo, reporter);
+			if (goo != null) goo = i.Decorate(goo, reporter);
 			if (reporter.hasErrors()) {
 				System.out.println("INVALID MiniJava");
 				System.exit(4);
@@ -59,17 +58,35 @@ public class Compiler {
 			t.typeCheck();
 
 			System.out.println("Contextual Analysis complete: ");
+			
 
 			if (reporter.hasErrors()) {
 				System.out.println("INVALID MiniJava");
 				System.exit(4);
 			} else {
 				System.out.println("valid MiniJava");
-				// display.showTree(goo); //only step through a valid MiniJava
-				// Tree....
-				System.exit(0);
 			}
-		}
-
+			System.out.println("Generating Code...");
+			CodeFarm farm= new CodeFarm(reporter);
+			farm.generateCode(goo);
+			if(reporter.hasErrors()){
+				System.out.println("Error During Code Generation");
+				System.exit(4);
+			}
+			System.out.println("Code Generation complete!");
+			
+			String objFileName = args[0].substring(0, args[0].lastIndexOf("."));
+			
+			ObjectFile objF = new ObjectFile(objFileName+".mJAM");
+			
+			System.out.print("Writing object code file " + objFileName + " ... ");
+/*			if (objF.write()) {
+				System.out.println("FAILED!");
+				System.exit(4);
+			}
+			else System.out.println("SUCCEEDED");*/
+			
+			System.exit(0);
+		
 	}
 }
