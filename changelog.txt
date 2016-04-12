@@ -1,0 +1,12 @@
+ChangeLog: Two things that resulted in a number of cases being wrong....
+
+1. Line 358 Identification.java: I neglected to consider a reference to a private class while not in said class whilst dealing with a static context
+
+2. Line 402 TypeChecker.java: this is the big one. Forgot to handle typeEquivalence with null, resulted in a huge number of errors!
+
+3. Line 456-459 Identification.java: Using this within a static context.
+
+
+
+After changing these two things I went from failing over 60 tests to just 2. Apologies for these three small mistakes!
+-Max

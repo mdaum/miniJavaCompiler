@@ -69,10 +69,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			currClass=c;
 			c.visit(this, arg);
 		}
-		if(mainMethod==null){
+/*		if(mainMethod==null){ //pa4
 			reporter.reportError("*** Identification Error: no main method found.");
 			throw new SyntaxError();
-		}
+		}*/
 		return null;
 	}
 
@@ -135,11 +135,11 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					ArrayType outer = (ArrayType) md.parameterDeclList.get(0).type;
 					if(outer.eltType.typeKind==TypeKind.UNSUPPORTED){//String
 						//we have main method
-						if(mainMethod!=null){
+/*						if(mainMethod!=null){ //PA4
 							reporter.reportError("*** Identification Error: two or more main methods!!");
 							throw new SyntaxError();
 						}
-						else mainMethod=md;
+						else mainMethod=md;*/
 					}
 				}
 			}
@@ -150,7 +150,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			//System.out.println(s.posn);
 			s.visit(this, arg);
 			numHit++;
-			if(numHit==md.statementList.size()){//on last statement
+/*			if(numHit==md.statementList.size()){//on last statement PA4
 				if(!(s instanceof ReturnStmt)){
 					if(md.type.typeKind!=TypeKind.VOID){
 						reporter.reportError("*** Identification Error: last statement in non-void method is not a return statement! Position: "+s.posn);
@@ -159,7 +159,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					md.statementList.add(new ReturnStmt( null,s.posn));
 					break;
 				}
-			}
+			}*/
 		}
 		arg.closeScope();//now at params level 3
 		arg.closeScope();//closing params, now at member scope level 2
@@ -237,8 +237,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 
 	@Override
 	public Object visitAssignStmt(AssignStmt stmt, IDTable arg) {
-		stmt.val.visit(this, arg);
-		stmt.ref.visit(this, arg);
+		RefKind vRef = (RefKind)stmt.val.visit(this, arg);
+		RefKind sRef = (RefKind) stmt.ref.visit(this, arg);
 		if(stmt.ref.d instanceof MethodDecl){
 			reporter.reportError("*** Identification error:  Cannot assign a method declaration! Position: "+stmt.ref.posn);
 			throw new SyntaxError();
@@ -247,10 +247,19 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			reporter.reportError("*** Identification error: Cannot assign the length of an array! Position: "+stmt.ref.posn);
 			throw new SyntaxError();
 		}
-/*		if(stmt.val instanceof RefExpr){ //wanna hand off pointer
-			stmt.ref.d=((RefExpr)stmt.val).ref.d;
-			LinkDump(stmt.ref,stmt.ref.d,log);
-		}*/
+		
+		if(stmt.val instanceof RefExpr){ 
+			RefExpr r = (RefExpr)stmt.val;
+			if(r.ref.d instanceof ClassDecl){
+				if(!(r.ref instanceof ThisRef)){
+				reporter.reportError("*** Identification error: Cannot use non-qualified static class ref on rhs of assignment. Position: "+stmt.val.posn);
+				throw new SyntaxError();
+				}
+			}
+			if(r.ref.d instanceof MethodDecl){
+				reporter.reportError("*** Identification error: method declaration without invokation on rhs of assign stmt. Position: "+stmt.val.posn);
+			}
+		}
 		return null;
 	}
 
@@ -332,7 +341,8 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	@Override
 	public Object visitRefExpr(RefExpr expr, IDTable arg) {
 		//NOT TESTED
-		expr.ref.visit(this, arg);
+		RefKind r =(RefKind)expr.ref.visit(this, arg);
+
 		return null;
 	}
 
@@ -401,7 +411,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					q.id.visit(this,arg);
 					if(q.id.d!=null){
 						MemberDecl m = (MemberDecl)q.id.d;
-						if(m.isPrivate||!(m.isStatic)){
+						if((m.isPrivate&&currQualifiedClass!=currClass)||!(m.isStatic)){ 
 							reporter.reportError("*** Identification Error: cannot access class member "+q.id.spelling+" b/c it is either not static or it is private. Position: "+q.id.posn);
 							throw new SyntaxError();
 						}
@@ -504,6 +514,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 	@Override
 	public Object visitThisRef(ThisRef ref, IDTable arg) {
 		ref.d=currClass;
+		if(currMethod.isStatic){
+			reporter.reportError("*** Identification Error: Cannot use a this in a static context. Position: "+ref.posn);
+			throw new SyntaxError();
+		}
 		Token ClassToken= new Token(TokenKind.id,currClass.name,currClass.posn);
 		ref.d.type=new ClassType(new Identifier(ClassToken,ClassToken.posn),ClassToken.posn);//for type checking...
 		((ClassType)ref.d.type).className.d=ref.d;
