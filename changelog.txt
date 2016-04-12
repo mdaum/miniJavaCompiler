@@ -1,12 +1,16 @@
 ChangeLog: Two things that resulted in a number of cases being wrong....
 
-1. Line 358 Identification.java: I neglected to consider a reference to a private class while not in said class whilst dealing with a static context
+1. Line 366 Identification.java: I neglected to consider a reference to a private class while not in said class whilst dealing with a static context
 
-2. Line 402 TypeChecker.java: this is the big one. Forgot to handle typeEquivalence with null, resulted in a huge number of errors!
+2. Line 402 TypeChecker.java: this is the big one. Forgot to handle typeEquivalence with null, resulted in a huge number of errors! I misunderstanded the null type
+rules
 
-3. Line 456-459 Identification.java: Using this within a static context.
+3. Line 464 Identification.java: Using this keyword within a static context.
+
+4. Line 471 Identification.java: In visitThisRef, I neglect to assign a decl to the classname of the classtype I make, resulting in an occasional null pointer.
 
 
-
-After changing these two things I went from failing over 60 tests to just 2. Apologies for these three small mistakes!
+After changing these few things I went from failing over 60 tests to just 0. Apologies for these three small mistakes!
+I am kicking myself because on number 2 if I had understood the rules for null I would have been a contender for the high score in the class
+on this assignment :( Please let me know if any of this will not be accepted. #2 solves all but 6 errors I believe. The other three changes fix the rest.
 -Max
