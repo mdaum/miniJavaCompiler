@@ -8,7 +8,8 @@ package miniJava.AbstractSyntaxTrees;
 import miniJava.SyntacticAnalyzer.SourcePosition;
 
 public abstract class Reference extends AST
-{
+{	
+	public Declaration d;
 	public Reference(SourcePosition posn){
 		super(posn);
 	}

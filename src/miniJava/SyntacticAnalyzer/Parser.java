@@ -75,7 +75,7 @@ public class Parser {
 			c.add(parseClassDeclaration());
 		}
 		accept(TokenKind.eot);
-		Package p= new Package(c,scanner.position);
+		Package p= new Package(c,scanner.position.deepClone());
 		return p;
 	}
 	
@@ -91,20 +91,23 @@ public class Parser {
 	private ClassDecl parseClassDeclaration() throws SyntaxError {
 		accept(TokenKind.clazz);
 		String cn;
+		SourcePosition posn=scanner.position.deepClone();
 		cn=currentToken.spelling;//classname
 		accept(TokenKind.id);
 		accept(TokenKind.lcurly);
 		FieldDeclList fdl = new FieldDeclList();
-		MethodDeclList mdl = new MethodDeclList(); 
+		MethodDeclList mdl = new MethodDeclList();
+		SourcePosition currMemberPosn;
 		while(currentToken.kind!=TokenKind.rcurly){ // constructing MemberDecl first...
 			boolean isVis=parseVisibility();//laying out all i need for either field or method decl
 			boolean isAccess=parseAccess();
+			currMemberPosn=scanner.position.deepClone();
 			Type t;
 			String name;
 			ParameterDeclList params=new ParameterDeclList();
 			StatementList statements = new StatementList();
 			if(currentToken.kind==TokenKind.voyd){//method declaration
-				t= new BaseType(TypeKind.VOID,scanner.position); //save off void type
+				t= new BaseType(TypeKind.VOID,scanner.position.deepClone()); //save off void type
 				acceptIt();
 				name=currentToken.spelling; //save off name
 				accept(TokenKind.id);
@@ -118,8 +121,8 @@ public class Parser {
 					statements.add(parseStatement());
 				}
 				accept(TokenKind.rcurly); //taking rcurly
-				MemberDecl member = new FieldDecl(isVis,isAccess,t,name,scanner.position);
-				MethodDecl method = new MethodDecl(member, params, statements, scanner.position);
+				MemberDecl member = new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
+				MethodDecl method = new MethodDecl(member, params, statements, currMemberPosn);
 				mdl.add(method);
 			}
 			else{ //don't know yet
@@ -127,7 +130,7 @@ public class Parser {
 				name=currentToken.spelling;
 				accept(TokenKind.id);
 				if(currentToken.kind==TokenKind.semicol){//field declaration
-					FieldDecl field= new FieldDecl(isVis,isAccess,t,name,scanner.position);
+					FieldDecl field= new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
 					fdl.add(field);
 					acceptIt();
 				}
@@ -141,17 +144,17 @@ public class Parser {
 					while(currentToken.kind!=TokenKind.rcurly){
 						statements.add(parseStatement());
 					}
-					MemberDecl member = new FieldDecl(isVis,isAccess,t,name,scanner.position);
-					MethodDecl method = new MethodDecl(member, params, statements, scanner.position);
+					MemberDecl member = new FieldDecl(isVis,isAccess,t,name,currMemberPosn);
+					MethodDecl method = new MethodDecl(member, params, statements, currMemberPosn);
 					mdl.add(method);
 					acceptIt(); //taking rcurly
 				}
-				else parseError("Expected lparen or semicol but found "+currentToken.kind+"\n Postion: "+scanner.position.toString());
+				else parseError("Expected lparen or semicol but found "+currentToken.kind+"\n Postion: "+scanner.position.deepClone().toString());
 				
 			}
 		}
 		acceptIt();  //accepting last rcurly
-		ClassDecl c = new ClassDecl(cn, fdl, mdl, scanner.position);
+		ClassDecl c = new ClassDecl(cn, fdl, mdl, posn);
 		return c;
 	}
 
@@ -197,26 +200,26 @@ public class Parser {
 		switch (currentToken.kind){
 		case bool:
 			acceptIt();
-			return new BaseType(TypeKind.BOOLEAN,scanner.position);
+			return new BaseType(TypeKind.BOOLEAN,scanner.position.deepClone());
 		case interger:
 		case id:
 			Type temp; //making sure to grab potential element type
 			if(currentToken.kind==TokenKind.interger){
-				temp=new BaseType(TypeKind.INT,scanner.position);
+				temp=new BaseType(TypeKind.INT,scanner.position.deepClone());
 			}
-			else  temp = new ClassType(new Identifier(currentToken),scanner.position);
+			else  temp = new ClassType(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 			acceptIt();
 			if(currentToken.kind==TokenKind.lbrack){
 			acceptIt();
 			accept(TokenKind.rbrack);
-			return new ArrayType(temp,scanner.position);
+			return new ArrayType(temp,scanner.position.deepClone());
 			}
 			return temp;
 		
 			
 		default: //shouldn't be hit
-			parseError("Expecting type but found " +currentToken.toString()+"\n Postion: "+scanner.position.toString());
-			return new BaseType(TypeKind.ERROR,scanner.position);
+			parseError("Expecting type but found " +currentToken.toString()+"\n Postion: "+scanner.position.deepClone().toString());
+			return new BaseType(TypeKind.ERROR,scanner.position.deepClone());
 		}
 		
 	}
@@ -228,11 +231,11 @@ public class Parser {
 	 */
 	private ParameterDeclList parseParameterList() throws SyntaxError {
 		ParameterDeclList toReturn=new ParameterDeclList();
-		toReturn.add(new ParameterDecl(parseType(),currentToken.spelling,scanner.position));//grabbing first param...
+		toReturn.add(new ParameterDecl(parseType(),currentToken.spelling,scanner.position.deepClone()));//grabbing first param...
 		accept(TokenKind.id);
 		while(currentToken.kind==TokenKind.comma){
 			acceptIt();
-			toReturn.add(new ParameterDecl(parseType(),currentToken.spelling,scanner.position)); //grabbing rest if exists
+			toReturn.add(new ParameterDecl(parseType(),currentToken.spelling,scanner.position.deepClone())); //grabbing rest if exists
 			accept(TokenKind.id);
 		}
 		return toReturn;
@@ -267,8 +270,8 @@ public class Parser {
 	private Reference parseReference() throws SyntaxError { //might be problem area
 		Reference root;
 		if(currentToken.kind==TokenKind.thiz||currentToken.kind==TokenKind.id){
-			if(currentToken.kind==TokenKind.thiz)root=new ThisRef(scanner.position);
-			else root=new IdRef(new Identifier(currentToken),scanner.position);
+			if(currentToken.kind==TokenKind.thiz)root=new ThisRef(scanner.position.deepClone());
+			else root=new IdRef(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 			acceptIt();
 		}else {
 			parseError("was expecting this or an id and found "+currentToken.toString()+"\n");
@@ -276,7 +279,7 @@ public class Parser {
 		}
 		while(currentToken.kind==TokenKind.dot){
 			acceptIt();
-			root=new QualifiedRef(root,new Identifier(currentToken),scanner.position);
+			root=new QualifiedRef(root,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 			accept(TokenKind.id);
 			
 		}
@@ -290,12 +293,12 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private IndexedRef parseArrayReference() throws SyntaxError {
-		IdRef idr = new IdRef(new Identifier(currentToken),scanner.position);
+		IdRef idr = new IdRef(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 		accept(TokenKind.id);
 		accept(TokenKind.lbrack);
 		Expression expr = parseExpression();
 		accept(TokenKind.rbrack);
-		return new IndexedRef(idr,expr,scanner.position);
+		return new IndexedRef(idr,expr,scanner.position.deepClone());
 	}
 	
 	/**
@@ -312,23 +315,25 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private Statement parseStatement() throws SyntaxError {
+		SourcePosition p;
 		switch(currentToken.kind){
 		case lcurly: //block statement
 			acceptIt();
+			p=scanner.position.deepClone();
 			StatementList sllcurly = new StatementList();
 			while(currentToken.kind!=TokenKind.rcurly){
 			sllcurly.add(parseStatement());	
 			}
 			acceptIt();//getting rcurly
-			return new BlockStmt(sllcurly,scanner.position);
+			return new BlockStmt(sllcurly,p);
 		case bool: // vardecl statement
 			acceptIt();
-			VarDecl vdbool = new VarDecl(new BaseType(TypeKind.BOOLEAN,scanner.position),currentToken.spelling,scanner.position);
+			VarDecl vdbool = new VarDecl(new BaseType(TypeKind.BOOLEAN,scanner.position.deepClone()),currentToken.spelling,scanner.position.deepClone());
 			accept(TokenKind.id);
 			accept(TokenKind.equals);
 			Expression ebool = parseExpression();
 			accept(TokenKind.semicol);
-			return new VarDeclStmt(vdbool,ebool,scanner.position);
+			return new VarDeclStmt(vdbool,ebool,scanner.position.deepClone());
 		case ret: //return statement COME BACK....
 			acceptIt();
 			Expression eret=null;
@@ -338,32 +343,35 @@ public class Parser {
 				haseret=true;
 			}
 			accept(TokenKind.semicol);
-			return new ReturnStmt(eret,scanner.position);
+			return new ReturnStmt(eret,scanner.position.deepClone());
 		case iff: //IfStmt
 			acceptIt();
 			accept(TokenKind.lparen);
+			p=scanner.position.deepClone();
 			Expression eiff = parseExpression();
 			accept(TokenKind.rparen);
 			Statement s0iff =parseStatement();
 			if(currentToken.kind==TokenKind.elsz){
 				acceptIt();
+				SourcePosition innerp=scanner.position.deepClone();
 				Statement s1iff=parseStatement();
-				return new IfStmt(eiff,s0iff,s1iff,scanner.position);
+				return new IfStmt(eiff,s0iff,s1iff,innerp);
 			}
-			return new IfStmt(eiff,s0iff,scanner.position);
+			return new IfStmt(eiff,s0iff,p);
 		case wile: //while statement
 			acceptIt();
+			p=scanner.position.deepClone();
 			accept(TokenKind.lparen);
 			Expression ewile=parseExpression();
 			accept(TokenKind.rparen);
 			Statement swile=parseStatement();
-			return new WhileStmt(ewile,swile,scanner.position);
+			return new WhileStmt(ewile,swile,p);
 		case thiz: //either assignStmt or CallStmt
 			acceptIt();
-			Reference rootthiz = new ThisRef(scanner.position); //will always start with reference
+			Reference rootthiz = new ThisRef(scanner.position.deepClone()); //will always start with reference
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
-				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken),scanner.position);
+				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.id);
 			}
 			//now I have full reference made
@@ -371,7 +379,7 @@ public class Parser {
 				acceptIt();
 				Expression ethiz =parseExpression();
 				accept(TokenKind.semicol);
-				return new AssignStmt(rootthiz,ethiz,scanner.position);
+				return new AssignStmt(rootthiz,ethiz,scanner.position.deepClone());
 			}
 			else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?) ie callStmt
 				acceptIt();
@@ -381,7 +389,7 @@ public class Parser {
 				}
 				accept(TokenKind.rparen);
 				accept(TokenKind.semicol);
-				return new CallStmt(rootthiz,elthiz,scanner.position);
+				return new CallStmt(rootthiz,elthiz,scanner.position.deepClone());
 			}
 			else {
 				parseError("Expecting term but found "+currentToken);
@@ -393,55 +401,55 @@ public class Parser {
 			if(currentToken.kind==TokenKind.lbrack){
 				acceptIt();
 				accept(TokenKind.rbrack);
-				tinterger=new ArrayType(new BaseType(TypeKind.INT,scanner.position),scanner.position);
+				tinterger=new ArrayType(new BaseType(TypeKind.INT,scanner.position.deepClone()),scanner.position.deepClone());
 			}
-			else {tinterger=new BaseType(TypeKind.INT,scanner.position);}
-			VarDecl vdinterger=new VarDecl(tinterger,currentToken.spelling,scanner.position);
+			else {tinterger=new BaseType(TypeKind.INT,scanner.position.deepClone());}
+			VarDecl vdinterger=new VarDecl(tinterger,currentToken.spelling,scanner.position.deepClone());
 			accept(TokenKind.id);
 			accept(TokenKind.equals);
 			Expression einterger=parseExpression();
 			accept(TokenKind.semicol);
-			return new VarDeclStmt(vdinterger,einterger,scanner.position);
+			return new VarDeclStmt(vdinterger,einterger,scanner.position.deepClone());
 		case id://this one is nasty		can be varDeclStmt,assignStmt,IxAssignStmt,or CallStmt
 			Token idroot = currentToken;
 			acceptIt();
 			
 			switch(currentToken.kind){
 			case id: //varDeclStmt
-				Type tidid=new ClassType(new Identifier(idroot),scanner.position);
-				VarDecl vdidid=new VarDecl(tidid,currentToken.spelling,scanner.position);
+				Type tidid=new ClassType(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone());
+				VarDecl vdidid=new VarDecl(tidid,currentToken.spelling,scanner.position.deepClone());
 				acceptIt();
 				accept(TokenKind.equals);
 				Expression eidid=parseExpression();
 				accept(TokenKind.semicol);
-				return new VarDeclStmt(vdidid,eidid,scanner.position);
+				return new VarDeclStmt(vdidid,eidid,scanner.position.deepClone());
 			case lbrack://either varDeclStmt with arrayType, or IxAssignStmt
 				acceptIt();
 				Type tidlbrack;
 				if(currentToken.kind==TokenKind.rbrack){//id[] id = Expression; we now know it is varDeclStmt
 					acceptIt();
-					tidlbrack=new ArrayType(new ClassType(new Identifier(idroot),scanner.position),scanner.position);
-					VarDecl vdidlbrack=new VarDecl(tidlbrack,currentToken.spelling,scanner.position);
+					tidlbrack=new ArrayType(new ClassType(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone()),scanner.position.deepClone());
+					VarDecl vdidlbrack=new VarDecl(tidlbrack,currentToken.spelling,scanner.position.deepClone());
 					accept(TokenKind.id);
 					accept(TokenKind.equals);
 					Expression eidlbrack=parseExpression();
 					accept(TokenKind.semicol);
-					return new VarDeclStmt(vdidlbrack,eidlbrack,scanner.position);
+					return new VarDeclStmt(vdidlbrack,eidlbrack,scanner.position.deepClone());
 				}
 				//id[Expression]=Expression; we now know this is IxAssignStmt
-				IdRef idridlbrack=new IdRef(new Identifier(idroot),scanner.position);
+				IdRef idridlbrack=new IdRef(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone());
 				Expression eidlbrack=parseExpression();
-				IndexedRef iridlbrack=new IndexedRef(idridlbrack,eidlbrack,scanner.position);
+				IndexedRef iridlbrack=new IndexedRef(idridlbrack,eidlbrack,scanner.position.deepClone());
 				accept(TokenKind.rbrack);
 				accept(TokenKind.equals);
 				Expression eidlbrack2=parseExpression();
 				accept(TokenKind.semicol);
-				return new IxAssignStmt(iridlbrack,eidlbrack2,scanner.position);
+				return new IxAssignStmt(iridlbrack,eidlbrack2,scanner.position.deepClone());
 			default://else could be assignStmt, CallStmt
-				Reference rootid=new IdRef(new Identifier(idroot),scanner.position);
+				Reference rootid=new IdRef(new Identifier(idroot,scanner.position.deepClone()),scanner.position.deepClone());
 				while(currentToken.kind==TokenKind.dot){
 					acceptIt();
-					rootid=new QualifiedRef(rootid,new Identifier(currentToken),scanner.position);
+					rootid=new QualifiedRef(rootid,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 					accept(TokenKind.id);
 				}
 				//now have full reference in rootid
@@ -449,7 +457,7 @@ public class Parser {
 					acceptIt();
 					Expression eiddefault=parseExpression();
 					accept(TokenKind.semicol);
-					return new AssignStmt(rootid,eiddefault,scanner.position);
+					return new AssignStmt(rootid,eiddefault,scanner.position.deepClone());
 				}
 				else if(currentToken.kind==TokenKind.lparen){//(ArgumentList?) //now know is callStmt
 					acceptIt();
@@ -459,7 +467,7 @@ public class Parser {
 					}
 					accept(TokenKind.rparen);
 					accept(TokenKind.semicol);
-					return new CallStmt(rootid,eliddefault,scanner.position);
+					return new CallStmt(rootid,eliddefault,scanner.position.deepClone());
 				}
 				else {
 					parseError("Expecting term but found "+currentToken);
@@ -486,7 +494,7 @@ public class Parser {
 		while(currentToken.spelling.equals("||")){
 			Token temp = currentToken;
 			acceptIt();
-			D=new BinaryExpr(new Operator(temp),D,ParseC(),scanner.position);
+			D=new BinaryExpr(new Operator(temp),D,ParseC(),scanner.position.deepClone());
 		}
 		return D;
 	}
@@ -495,7 +503,7 @@ public class Parser {
 		while(currentToken.spelling.equals("&&")){
 			Token temp = currentToken;
 			acceptIt();
-			C=new BinaryExpr(new Operator(temp),C,ParseEq(),scanner.position);
+			C=new BinaryExpr(new Operator(temp),C,ParseEq(),scanner.position.deepClone());
 		}
 		return C;
 	}
@@ -504,7 +512,7 @@ public class Parser {
 		while(currentToken.spelling.equals("==")||currentToken.spelling.equals("!=")){
 			Token temp = currentToken;
 			acceptIt();
-			Eq=new BinaryExpr(new Operator(temp),Eq,ParseRe(),scanner.position);
+			Eq=new BinaryExpr(new Operator(temp),Eq,ParseRe(),scanner.position.deepClone());
 		}
 		return Eq;
 	}
@@ -513,7 +521,7 @@ public class Parser {
 		while(currentToken.spelling.equals("<=")||currentToken.spelling.equals("<")||currentToken.spelling.equals(">")||currentToken.spelling.equals(">=")){
 			Token temp =currentToken;
 			acceptIt();
-			Re=new BinaryExpr(new Operator(temp),Re,ParseAdd(),scanner.position);
+			Re=new BinaryExpr(new Operator(temp),Re,ParseAdd(),scanner.position.deepClone());
 		}
 		return Re;
 	}
@@ -522,7 +530,7 @@ public class Parser {
 		while(currentToken.spelling.equals("+")||currentToken.spelling.equals("-")){
 			Token temp =currentToken;
 			acceptIt();
-			Add=new BinaryExpr(new Operator(temp),Add,ParseMult(),scanner.position);
+			Add=new BinaryExpr(new Operator(temp),Add,ParseMult(),scanner.position.deepClone());
 		}
 		return Add;
 	}
@@ -531,7 +539,7 @@ public class Parser {
 		while(currentToken.spelling.equals("*")||currentToken.spelling.equals("/")){
 			Token temp =currentToken;
 			acceptIt();
-			Mult=new BinaryExpr(new Operator(temp),Mult,ParseUnary(),scanner.position);
+			Mult=new BinaryExpr(new Operator(temp),Mult,ParseUnary(),scanner.position.deepClone());
 		}
 		return Mult;
 	}
@@ -540,7 +548,7 @@ public class Parser {
 		if(currentToken.spelling.equals("-")||currentToken.spelling.equals("!")){
 			Operator ounbun=new Operator(currentToken);
 			acceptIt();
-			E=new UnaryExpr(ounbun,ParseUnary(),scanner.position);
+			E=new UnaryExpr(ounbun,ParseUnary(),scanner.position.deepClone());
 		}
 		else E=ParseRest();
 		return E;
@@ -566,16 +574,16 @@ public class Parser {
 		switch(currentToken.kind){
 		//literalExpr
 		case num:
-			e0=new LiteralExpr(new IntLiteral(currentToken),scanner.position);
+			e0=new LiteralExpr(new IntLiteral(currentToken),scanner.position.deepClone());
 			acceptIt();
 			break;
 		case nul:
-			e0=new LiteralExpr(new NullLiteral(currentToken),scanner.position);
+			e0=new LiteralExpr(new NullLiteral(currentToken),scanner.position.deepClone());
 			acceptIt();
 			break;
 		case tru:
 		case fals:
-			e0=new LiteralExpr(new BooleanLiteral(currentToken),scanner.position);
+			e0=new LiteralExpr(new BooleanLiteral(currentToken),scanner.position.deepClone());
 			acceptIt();
 			break;
 		//UnaryExpr
@@ -583,7 +591,7 @@ public class Parser {
 		case bunop:
 			Operator ounbun=new Operator(currentToken);
 			acceptIt();
-			e0=new UnaryExpr(ounbun,parseExpression(),scanner.position);
+			e0=new UnaryExpr(ounbun,parseExpression(),scanner.position.deepClone());
 			break;*/
 			//????? TODO
 		case lparen: //not sure yet......will have to handle along with appending (binop|bunop Expression)?
@@ -596,7 +604,7 @@ public class Parser {
 			if(currentToken.kind==TokenKind.interger){ //int[Expression] //NewArrayExpr
 				acceptIt();
 				accept(TokenKind.lbrack);
-				e0=new NewArrayExpr(new BaseType(TypeKind.INT,scanner.position),parseExpression(),scanner.position);
+				e0=new NewArrayExpr(new BaseType(TypeKind.INT,scanner.position.deepClone()),parseExpression(),scanner.position.deepClone());
 				accept(TokenKind.rbrack);
 				break;
 			}
@@ -606,57 +614,57 @@ public class Parser {
 				if(currentToken.kind==TokenKind.lparen){ //NewObjectExpr
 					acceptIt();
 					accept(TokenKind.rparen);
-					e0=new NewObjectExpr(new ClassType(new Identifier(nuid),scanner.position),scanner.position);
+					e0=new NewObjectExpr(new ClassType(new Identifier(nuid,scanner.position.deepClone()),scanner.position.deepClone()),scanner.position.deepClone());
 					break;
 				}
 				else{ //NewArrayExpr
 					accept(TokenKind.lbrack);
-					e0=new NewArrayExpr(new ClassType(new Identifier(nuid),scanner.position),parseExpression(),scanner.position);
+					e0=new NewArrayExpr(new ClassType(new Identifier(nuid,scanner.position.deepClone()),scanner.position.deepClone()),parseExpression(),scanner.position.deepClone());
 					accept(TokenKind.rbrack);
 					break;
 				}
 			}
 		case thiz: //either RefExpr or CallExpr
 			acceptIt();
-			Reference rootthiz = new ThisRef(scanner.position); //will always start with reference
+			Reference rootthiz = new ThisRef(scanner.position.deepClone()); //will always start with reference
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
-				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken),scanner.position);
+				rootthiz=new QualifiedRef(rootthiz,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.id);
 			}
 			//now have current Reference
 			if(currentToken.kind!=TokenKind.lparen){//RefExpr
-				e0=new RefExpr(rootthiz,scanner.position);
+				e0=new RefExpr(rootthiz,scanner.position.deepClone());
 				break;
 			}
 			//CallExpr
 			accept(TokenKind.lparen);
 			if(currentToken.kind!=TokenKind.rparen){
-				e0=new CallExpr(rootthiz,parseArgumentList(),scanner.position);
+				e0=new CallExpr(rootthiz,parseArgumentList(),scanner.position.deepClone());
 			}
 			else{ //didn't handle zero param here....this should fix it..
-				e0=new CallExpr(rootthiz,new ExprList(),scanner.position);
+				e0=new CallExpr(rootthiz,new ExprList(),scanner.position.deepClone());
 			}
 			accept(TokenKind.rparen);
 			break;
 		case id: //RefExpr or CallExpr again
-			Reference rootid = new IdRef(new Identifier(currentToken),scanner.position); //will always start with reference
+			Reference rootid = new IdRef(new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone()); //will always start with reference
 			IdRef temp= (IdRef) rootid;
 			acceptIt();
 			if(currentToken.kind==TokenKind.lbrack){//id[Expression] //RefExpr...but Indexed
 				acceptIt();
-				e0=new RefExpr(new IndexedRef(temp,parseExpression(),scanner.position),scanner.position);
+				e0=new RefExpr(new IndexedRef(temp,parseExpression(),scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.rbrack);
 				break;
 			}
 			while(currentToken.kind==TokenKind.dot){
 				acceptIt();
-				rootid=new QualifiedRef(rootid,new Identifier(currentToken),scanner.position);
+				rootid=new QualifiedRef(rootid,new Identifier(currentToken,scanner.position.deepClone()),scanner.position.deepClone());
 				accept(TokenKind.id);
 			}
 			//now have full Ref
 			if(currentToken.kind!=TokenKind.lparen){//Ref Expr, non-Indexed
-				e0=new RefExpr(rootid,scanner.position);
+				e0=new RefExpr(rootid,scanner.position.deepClone());
 				break;
 			}
 			accept(TokenKind.lparen);//CallExpr
@@ -664,7 +672,7 @@ public class Parser {
 			if(currentToken.kind!=TokenKind.rparen){
 				elid=parseArgumentList();
 			}
-			e0=new CallExpr(rootid,elid,scanner.position);
+			e0=new CallExpr(rootid,elid,scanner.position.deepClone());
 			accept(TokenKind.rparen);
 			break;
 			
@@ -709,7 +717,7 @@ public class Parser {
 	 * @throws SyntaxError the syntax error
 	 */
 	private void parseError(String e) throws SyntaxError {
-		reporter.reportError("Parse error: "+e+"\n Postion: "+scanner.position.toString());
+		reporter.reportError("Parse error: "+e+"\n Postion: "+scanner.position.deepClone().toString());
 		throw new SyntaxError();
 	}
 

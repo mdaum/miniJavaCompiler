@@ -8,7 +8,7 @@ package miniJava.AbstractSyntaxTrees;
 import miniJava.SyntacticAnalyzer.SourcePosition;
 
 abstract public class MemberDecl extends Declaration {
-
+	public ClassDecl c;
     public MemberDecl(boolean isPrivate, boolean isStatic, Type mt, String name, SourcePosition posn) {
         super(name, mt, posn);
         this.isPrivate = isPrivate;
