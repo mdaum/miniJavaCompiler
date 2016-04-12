@@ -400,7 +400,11 @@ public class TypeChecker implements Visitor<Object,Type> {
 			return false;
 		}
 		if(one.typeKind==TypeKind.ERROR||two.typeKind==TypeKind.ERROR)return true;
-		if(one.typeKind==TypeKind.NULL||two.typeKind==TypeKind.NULL)return true;
+		if(one.typeKind==TypeKind.NULL||two.typeKind==TypeKind.NULL){
+			if(one instanceof BaseType && two instanceof BaseType&& one.typeKind!=two.typeKind){
+				reporter.reportError("*** Type Check Error: Type mismatch:  "+one.typeKind+", "+two.typeKind+". Position: "+p);
+			}
+		}
 		if(one instanceof ArrayType &&two instanceof ArrayType){
 			toReturn= checkTypeEquivalence(((ArrayType)one).eltType,((ArrayType)two).eltType,p); 
 		}
