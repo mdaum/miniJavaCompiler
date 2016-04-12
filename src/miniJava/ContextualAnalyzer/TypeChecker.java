@@ -403,7 +403,9 @@ public class TypeChecker implements Visitor<Object,Type> {
 		if(one.typeKind==TypeKind.NULL||two.typeKind==TypeKind.NULL){
 			if(one instanceof BaseType && two instanceof BaseType&& one.typeKind!=two.typeKind){
 				reporter.reportError("*** Type Check Error: Type mismatch:  "+one.typeKind+", "+two.typeKind+". Position: "+p);
+				return false;
 			}
+			return true;
 		}
 		if(one instanceof ArrayType &&two instanceof ArrayType){
 			toReturn= checkTypeEquivalence(((ArrayType)one).eltType,((ArrayType)two).eltType,p); 
