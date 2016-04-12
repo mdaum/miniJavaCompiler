@@ -69,10 +69,10 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			currClass=c;
 			c.visit(this, arg);
 		}
-/*		if(mainMethod==null){ //pa4
+		if(mainMethod==null){ //pa4
 			reporter.reportError("*** Identification Error: no main method found.");
 			throw new SyntaxError();
-		}*/
+		}
 		return null;
 	}
 
@@ -135,11 +135,11 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					ArrayType outer = (ArrayType) md.parameterDeclList.get(0).type;
 					if(outer.eltType.typeKind==TypeKind.UNSUPPORTED){//String
 						//we have main method
-/*						if(mainMethod!=null){ //PA4
+						if(mainMethod!=null){ //PA4
 							reporter.reportError("*** Identification Error: two or more main methods!!");
 							throw new SyntaxError();
 						}
-						else mainMethod=md;*/
+						else mainMethod=md;
 					}
 				}
 			}
@@ -150,7 +150,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			//System.out.println(s.posn);
 			s.visit(this, arg);
 			numHit++;
-/*			if(numHit==md.statementList.size()){//on last statement PA4
+			if(numHit==md.statementList.size()){//on last statement PA4
 				if(!(s instanceof ReturnStmt)){
 					if(md.type.typeKind!=TypeKind.VOID){
 						reporter.reportError("*** Identification Error: last statement in non-void method is not a return statement! Position: "+s.posn);
@@ -159,7 +159,7 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 					md.statementList.add(new ReturnStmt( null,s.posn));
 					break;
 				}
-			}*/
+			}
 		}
 		arg.closeScope();//now at params level 3
 		arg.closeScope();//closing params, now at member scope level 2
