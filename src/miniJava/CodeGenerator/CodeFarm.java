@@ -17,6 +17,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 	private ArrayList<Integer> patchAddr;
 	int mainAddr;
 	private int displacement;
+	private boolean currPrintln;
 	private final int charSize = Machine.characterSize; //all the same in miniJava, yay!
 	public CodeFarm(ErrorReporter reporter,MethodDecl m){
 		this.reporter=reporter;
@@ -24,6 +25,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 		this.displacement=0;
 		this.toPatch=new ArrayList<MemberDecl>();
 		this.patchAddr=new ArrayList<Integer>();
+		currPrintln=false;
 	}
 	
 	
@@ -33,8 +35,10 @@ public class CodeFarm implements Visitor<Integer,Object>{
 		patchAll();
 	}
 	
-	/*Integer arg in visitor implementation represents certain flags, mappings are:
+	/*Integer arg in visitor implementation represents certain flags (or sometimes just offsets, will note), mappings are:
 		-7 = don't care
+		 9 = fetch
+		11 = store
 	
 	*/
 
@@ -51,7 +55,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 					offFromSB++;
 				}
 				else {
-					f.visit(this, currNSF);
+					f.visit(this, currNSF); //offset visit
 					currNSF++;
 				}
 			}
@@ -84,13 +88,28 @@ public class CodeFarm implements Visitor<Integer,Object>{
 
 	@Override
 	public Object visitMethodDecl(MethodDecl md, Integer arg) {
-		// TODO Auto-generated method stub
+		int paramNum=md.parameterDeclList.size();
+		for(ParameterDecl p:md.parameterDeclList){ //make entities for params
+			p.visit(this, paramNum);//offset visit
+			paramNum--;
+		}
+		md.entity=new KnownAddress(charSize,Machine.nextInstrAddr());
+		if(md.equals(main)){
+			Machine.patch(mainAddr, Machine.nextInstrAddr());
+		}
+		displacement=3; //making room on frame
+		currPrintln=isPrintln(md);
+		for(Statement s: md.statementList){
+			s.visit(this, md.parameterDeclList.size());//offest visit is only used on return stmt
+		}
+		
 		return null;
 	}
 
 	@Override
 	public Object visitParameterDecl(ParameterDecl pd, Integer arg) {
 		// TODO Auto-generated method stub
+		pd.entity=new KnownAddress(charSize,arg*-1);
 		return null;
 	}
 
@@ -150,7 +169,13 @@ public class CodeFarm implements Visitor<Integer,Object>{
 
 	@Override
 	public Object visitReturnStmt(ReturnStmt stmt, Integer arg) {
-		// TODO Auto-generated method stub
+		if(stmt.returnExpr==null){
+			if(!currPrintln)Machine.emit(Op.RETURN,0,0,arg);
+		}
+		else{
+			stmt.returnExpr.visit(this, 9);
+			if(!currPrintln) Machine.emit(Op.RETURN,1,0,arg);
+		}
 		return null;
 	}
 
@@ -289,6 +314,10 @@ public class CodeFarm implements Visitor<Integer,Object>{
 			Machine.patch(patchAddr.get(i),((KnownAddress)toPatch.get(i).entity).displacement);
 		}
 		
+	}
+	private boolean isPrintln(MethodDecl m){
+		if(m.c.name.equals("_PrintStream"))return true;
+		return false;
 	}
 	 
 
