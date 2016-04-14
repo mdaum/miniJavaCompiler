@@ -15,50 +15,70 @@ public class CodeFarm implements Visitor<Integer,Object>{
 	private MethodDecl main;
 	private ArrayList<MemberDecl> toPatch; //toPatch and patchAddr are parallel
 	private ArrayList<Integer> patchAddr;
-	private int lDis;//local displacement
-	private int hDis; //heap displacement
+	int mainAddr;
+	private int displacement;
+	private final int charSize = Machine.characterSize; //all the same in miniJava, yay!
 	public CodeFarm(ErrorReporter reporter,MethodDecl m){
 		this.reporter=reporter;
 		this.main=m;
+		this.displacement=0;
 		this.toPatch=new ArrayList<MemberDecl>();
 		this.patchAddr=new ArrayList<Integer>();
 	}
 	
+	
 	public void generateCode(AST ast){
-		
+		Machine.initCodeGen();
+		ast.visit(this, -7);
+		patchAll();
 	}
 	
+	/*Integer arg in visitor implementation represents certain flags, mappings are:
+		-7 = don't care
 	
-	private void codeGenError(String e,SourcePosition pos) throws GenError {
-		reporter.reportError("*** code generation error: "+e+". Postion: "+pos);
-		throw new GenError();
-	}
-	
-	class GenError extends Error{
-		
-		/** The Constant serialVersionUID. */
-		private static final long serialVersionUID=1L;
-	}
-
-	/*mapping integers to signals:
-		0: rhs
-		1: lhs
 	*/
+
 	@Override
 	public Object visitPackage(Package prog, Integer arg) {
-		// TODO Auto-generated method stub
+		int offFromSB = 0;
+		//static vars
+		for(ClassDecl c: prog.classDeclList){ //assign entities to all fields, emit static ones...
+			int currNSF=0;//will use for displacements of non static fields
+			for(FieldDecl f: c.fieldDeclList){
+				if(f.isStatic){
+					Machine.emit(Op.PUSH,1);//pushing onto global segment
+					f.entity=new KnownAddress(charSize,offFromSB+1);
+					offFromSB++;
+				}
+				else {
+					f.visit(this, currNSF);
+					currNSF++;
+				}
+			}
+		}
+		mainAddr= Machine.nextInstrAddr();//grabbing for patching main soon...
+		//call main
+		Machine.emit(Op.CALL,Reg.CB,-1); //-1 will act as unknown addr
+		Machine.emit(Op.POP,0,0,offFromSB);
+		Machine.emit(Op.HALT,0,0,0);//done, now just patch main
+		
+		for(ClassDecl c: prog.classDeclList){ //now looking at methods of each class
+			c.visit(this, -7);
+		}
 		return null;
 	}
 
 	@Override
 	public Object visitClassDecl(ClassDecl cd, Integer arg) {
-		// TODO Auto-generated method stub
+		for(MethodDecl m: cd.methodDeclList){
+			m.visit(this, -7);
+		}
 		return null;
 	}
 
 	@Override
 	public Object visitFieldDecl(FieldDecl fd, Integer arg) {
-		// TODO Auto-generated method stub
+		fd.entity= new KnownAddress(charSize,arg);
 		return null;
 	}
 
@@ -245,6 +265,19 @@ public class CodeFarm implements Visitor<Integer,Object>{
 	
 	
 	
+	//Error Stuff
+	
+	private void codeGenError(String e,SourcePosition pos) throws GenError {
+		reporter.reportError("*** code generation error: "+e+". Postion: "+pos);
+		throw new GenError();
+	}
+	
+	class GenError extends Error{
+		
+		/** The Constant serialVersionUID. */
+		private static final long serialVersionUID=1L;
+	}
+	
 	//Auxillary Logic...
 	
 	private void patchAll(){
@@ -253,7 +286,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 			throw new GenError();
 		}
 		for(int i=0;i<toPatch.size();i++){
-			Machine.patch(patchAddr.get(i), toPatch.get(i).entity.address);
+			Machine.patch(patchAddr.get(i),((KnownAddress)toPatch.get(i).entity).displacement);
 		}
 		
 	}
