@@ -80,11 +80,11 @@ public class Compiler {
 			ObjectFile objF = new ObjectFile(objFileName+".mJAM");
 			
 			System.out.print("Writing object code file " + objFileName + " ... ");
-/*			if (objF.write()) {
+			if (objF.write()) {
 				System.out.println("FAILED!");
 				System.exit(4);
 			}
-			else System.out.println("SUCCEEDED");*/
+			else System.out.println("SUCCEEDED");
 			
 			System.exit(0);
 		
