@@ -465,6 +465,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 		}
 		else if(arg==9){//fetch
 			if(ref.id.d instanceof FieldDecl && ((FieldDecl)ref.id.d).isArrayLength){ 
+				ref.ref.visit(this, 9);//fetching arrayref
 				Machine.emit(Prim.arraylen);
 			}
 			else if(ref.id.d instanceof FieldDecl){
@@ -489,11 +490,11 @@ public class CodeFarm implements Visitor<Integer,Object>{
 
 	@Override
 	public Object visitIndexedRef(IndexedRef ref, Integer arg) {
-		if(arg==11){//store
+		if(arg==11){
 		ref.idRef.visit(this,9);
 		ref.indexExpr.visit(this, 9);
 		}
-		else if(arg==9){//fetch
+		else if(arg==9){
 			ref.idRef.visit(this, 9);
 			ref.indexExpr.visit(this, 9);
 			Machine.emit(Prim.arrayref);
