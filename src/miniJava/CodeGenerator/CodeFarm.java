@@ -17,6 +17,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 	private ArrayList<Integer> patchAddr;
 	int mainAddr;
 	private int displacement;
+	private MethodDecl currMethod=null;
 	private boolean currPrintln;
 	private final int charSize = Machine.characterSize; //all the same in miniJava, yay!
 	public CodeFarm(ErrorReporter reporter,MethodDecl m){
@@ -38,12 +39,13 @@ public class CodeFarm implements Visitor<Integer,Object>{
 	/*Integer arg in visitor implementation represents certain flags (or sometimes just offsets, will note), mappings are:
 		-7 = don't care
 		 9 = fetch
-		11 = store
-	
+		11 = store	
 	*/
 
 	@Override
 	public Object visitPackage(Package prog, Integer arg) {
+		Machine.emit(Op.LOADL,0);            // array length 0
+		Machine.emit(Prim.newarr);           // empty String array argument
 		int offFromSB = 0;
 		//static vars
 		for(ClassDecl c: prog.classDeclList){ //assign entities to all fields, emit static ones...
@@ -88,6 +90,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 
 	@Override
 	public Object visitMethodDecl(MethodDecl md, Integer arg) {
+		currMethod=md;
 		int paramNum=md.parameterDeclList.size();
 		for(ParameterDecl p:md.parameterDeclList){ //make entities for params
 			p.visit(this, paramNum);//offset visit
@@ -100,7 +103,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 		displacement=3; //making room on frame
 		currPrintln=isPrintln(md);
 		for(Statement s: md.statementList){
-			s.visit(this, md.parameterDeclList.size());//offest visit is only used on return stmt
+			s.visit(this, -7);//offest visit is only used on return stmt
 		}
 		
 		return null;
@@ -147,7 +150,8 @@ public class CodeFarm implements Visitor<Integer,Object>{
 			if(s instanceof VarDeclStmt)numVarDecls++;
 			s.visit(this, -7);
 		}
-		Machine.emit(Op.POP,0,0,numVarDecls);//vars now not accessible
+		if(numVarDecls>0)Machine.emit(Op.POP,numVarDecls);//vars now not accessible
+		displacement=displacement-numVarDecls;
 		return null;
 	}
 
@@ -235,23 +239,39 @@ public class CodeFarm implements Visitor<Integer,Object>{
 			}
 		}
 		else{
-			stmt.methodRef.visit(this, 9);
+			if(!((MethodDecl)stmt.methodRef.d).isStatic){
+				stmt.methodRef.visit(this, 9);
+				toPatch.add((MemberDecl)stmt.methodRef.d);//might be an issue
+				patchAddr.add(Machine.nextInstrAddr());
+				Machine.emit(Op.CALLI,Reg.CB,-1);//unknown for now
+			}
+			else{
 			toPatch.add((MemberDecl)stmt.methodRef.d);//might be an issue
 			patchAddr.add(Machine.nextInstrAddr());
-			Machine.emit(Op.CALLI,Reg.CB,-1);//unknown for now
+			Machine.emit(Op.CALL,Reg.CB,-1);//unknown for now
+			}
+		}
+		if(stmt.methodRef.d.type.typeKind!=TypeKind.VOID){
+			Machine.emit(Op.POP,1);
 		}
 		
 		return null;
 	}
 
 	@Override
+	//passing in num args/params....
 	public Object visitReturnStmt(ReturnStmt stmt, Integer arg) {
+		int numparam=currMethod.parameterDeclList.size();
 		if(stmt.returnExpr==null){
-			if(!currPrintln)Machine.emit(Op.RETURN,0,0,arg);
+			if(!currPrintln){
+				Machine.emit(Op.RETURN,0,0,numparam);
+			}
 		}
 		else{
 			stmt.returnExpr.visit(this, 9);
-			if(!currPrintln) Machine.emit(Op.RETURN,1,0,arg);
+			if(!currPrintln) {
+				Machine.emit(Op.RETURN,1,0,numparam);
+			}
 		}
 		return null;
 	}
@@ -315,6 +335,33 @@ public class CodeFarm implements Visitor<Integer,Object>{
 
 	@Override
 	public Object visitBinaryExpr(BinaryExpr expr, Integer arg) {
+		if(expr.operator.spelling.equals("&&")){
+			expr.left.visit(this, 9);
+			int andAddr= Machine.nextInstrAddr();
+			Machine.emit(Op.JUMPIF,0,Reg.CB,-1);
+			Machine.emit(Op.LOADL,1);
+			expr.right.visit(this, 9);
+			Machine.emit(Prim.and);
+			int endAddr=Machine.nextInstrAddr();
+			Machine.emit(Op.JUMP,Reg.CB,-1);
+			Machine.patch(andAddr, Machine.nextInstrAddr());
+			Machine.emit(Op.LOADL,0);
+			Machine.patch(endAddr, Machine.nextInstrAddr());
+		}
+		else if(expr.operator.spelling.equals("||")){
+			expr.left.visit(this, 9);
+			int orAddr = Machine.nextInstrAddr();
+			Machine.emit(Op.JUMPIF,1,Reg.CB,-1);
+			Machine.emit(Op.LOADL,0);
+			expr.right.visit(this, 9);
+			Machine.emit(Prim.or);
+			int endAddr=Machine.nextInstrAddr();
+			Machine.emit(Op.JUMP,Reg.CB,-1);
+			Machine.patch(orAddr,Machine.nextInstrAddr());
+			Machine.emit(Op.LOADL,1);
+			Machine.patch(endAddr, Machine.nextInstrAddr());
+		}
+		else{
 		expr.left.visit(this, 9);
 		expr.right.visit(this, 9);
 		switch(expr.operator.spelling){
@@ -348,17 +395,13 @@ public class CodeFarm implements Visitor<Integer,Object>{
 		case ">=":
 			Machine.emit(Prim.ge);
 			break;
-		case "&&":
-			Machine.emit(Prim.and);
-			break;
-		case "||":
-			Machine.emit(Prim.or);
-			break;
 		default:
 			codeGenError("Unexpected operator "+expr.operator.spelling, expr.operator.posn);
 			break;
 		}
+		}
 		return null;
+		
 	}
 
 	@Override
@@ -397,12 +440,11 @@ public class CodeFarm implements Visitor<Integer,Object>{
 			}
 		}
 		else{
-			expr.functionRef.visit(this, 9);
+			if(!((MethodDecl)expr.functionRef.d).isStatic)expr.functionRef.visit(this, 9);
 			toPatch.add((MemberDecl)expr.functionRef.d);//might be an issue
 			patchAddr.add(Machine.nextInstrAddr());
 			Machine.emit(Op.CALLI,Reg.CB,-1);//unknown for now
 		}
-		
 		return null;
 	}
 
@@ -453,7 +495,7 @@ public class CodeFarm implements Visitor<Integer,Object>{
 		if(arg==11){//store
 			
 			if(ref.id.d instanceof FieldDecl && ((FieldDecl)ref.id.d).isArrayLength){
-				codeGenError("array.length is read-only", ref.id.posn);
+				codeGenError("*** array.length is read-only", ref.id.posn);
 			}
 			else if(ref.id.d instanceof FieldDecl &&((FieldDecl)ref.id.d).isStatic){
 				return ((KnownAddress)ref.id.d.entity).displacement;

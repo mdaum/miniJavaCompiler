@@ -4,8 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
-import mJAM.Disassembler;
-import mJAM.Interpreter;
+
 import mJAM.ObjectFile;
 import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.AbstractSyntaxTrees.ASTDisplay;
@@ -68,7 +67,7 @@ public class Compiler {
 			} else {
 				System.out.println("valid MiniJava");
 			}
-			System.out.println("Generating Code...");
+		System.out.println("Generating Code...");
 			CodeFarm farm= new CodeFarm(reporter,i.mainMethod);
 			farm.generateCode(goo);
 			if(reporter.hasErrors()){
@@ -79,16 +78,13 @@ public class Compiler {
 			
 			String objFileName = args[0].substring(0, args[0].lastIndexOf("."));
 			ObjectFile objF = new ObjectFile(objFileName+".mJAM");
-			String asmCodeFileName = objFileName+".asm";
-			Disassembler d = new Disassembler(objFileName+".mJAM");
 			System.out.print("Writing object code file " + objFileName + " ... ");
-			if (objF.write()||d.disassemble()) {
+			if (objF.write()) {
 				System.out.println("FAILED!");
 				System.exit(4);
 			}
 			else System.out.println("SUCCEEDED");
 			
-			//Interpreter.debug(objFileName+".mJAM", asmCodeFileName);
 			System.exit(0);
 		
 	}

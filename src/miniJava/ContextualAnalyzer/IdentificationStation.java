@@ -247,12 +247,15 @@ public class IdentificationStation implements Visitor<IDTable,Object>{
 			reporter.reportError("*** Identification error: Cannot assign the length of an array! Position: "+stmt.ref.posn);
 			throw new SyntaxError();
 		}
+		if(stmt.ref instanceof ThisRef){
+			reporter.reportError("*** Identification error: Cannot use this on lhs of assign statement. Position: "+stmt.ref.posn);
+		}
 		
 		if(stmt.val instanceof RefExpr){ 
 			RefExpr r = (RefExpr)stmt.val;
 			if(r.ref.d instanceof ClassDecl){
 				if(!(r.ref instanceof ThisRef)){
-				reporter.reportError("*** Identification error: Cannot use non-qualified static class ref on rhs of assignment. Position: "+stmt.val.posn);
+				reporter.reportError("*** Identification error: Cannot use non-qualified static class ref on lhs of assignment. Position: "+stmt.val.posn);
 				throw new SyntaxError();
 				}
 			}

@@ -99,8 +99,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 
 	@Override
 	public Type visitArrayType(ArrayType type, Object arg) {//might be trouble
-		 
-		return type.eltType.visit(this, null);
+		 return type.eltType.visit(this, null);
 	}
 
 	@Override
@@ -375,12 +374,17 @@ public class TypeChecker implements Visitor<Object,Type> {
 		MethodDecl m=(MethodDecl) method.d;
 		ArrayList<Type> argTypes=new ArrayList<Type>();
 		for (Expression e : args) {
-			argTypes.add(e.visit(this, null));
+			if(e instanceof RefExpr &&((RefExpr)e).ref.d.type instanceof ArrayType && !(((RefExpr)e).ref instanceof IndexedRef)){
+				argTypes.add(((RefExpr)e).ref.d.type);
+				e.visit(this, null);
+			}
+			else argTypes.add(e.visit(this, null));
 		}
 		if(args.size()!=m.parameterDeclList.size()){
 			reporter.reportError("*** Type Check Error: not calling method "+m.name +" with right number of args "+method.posn);
 			return genError;
 		}
+		
 		boolean badMatch=false;
 		for(int i=0;i<args.size();i++){
 			if(!(checkTypeEquivalence(argTypes.get(i), m.parameterDeclList.get(i).type,method.posn))){
