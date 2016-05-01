@@ -9,3 +9,4 @@
 
 - **added SourcePosition to Identifier for better Error Reporting**
 - **added isArrayLength bool to FieldDecl for easier checking of edge case**
+- **added RuntimeEntity entity to Declaration.java for codeGen**
