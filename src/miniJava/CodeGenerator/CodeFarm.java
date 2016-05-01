@@ -440,10 +440,17 @@ public class CodeFarm implements Visitor<Integer,Object>{
 			}
 		}
 		else{
-			if(!((MethodDecl)expr.functionRef.d).isStatic)expr.functionRef.visit(this, 9);
+			if(!((MethodDecl)expr.functionRef.d).isStatic){
+				expr.functionRef.visit(this, 9);
+				toPatch.add((MemberDecl)expr.functionRef.d);//might be an issue
+				patchAddr.add(Machine.nextInstrAddr());
+				Machine.emit(Op.CALLI,Reg.CB,-1);//unknown for now
+			}
+			else{
 			toPatch.add((MemberDecl)expr.functionRef.d);//might be an issue
 			patchAddr.add(Machine.nextInstrAddr());
-			Machine.emit(Op.CALLI,Reg.CB,-1);//unknown for now
+			Machine.emit(Op.CALL,Reg.CB,-1);//unknown for now
+			}
 		}
 		return null;
 	}

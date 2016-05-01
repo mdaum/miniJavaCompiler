@@ -99,7 +99,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 
 	@Override
 	public Type visitArrayType(ArrayType type, Object arg) {//might be trouble
-		 return type.eltType.visit(this, null);
+		 return type;
 	}
 
 	@Override
@@ -251,7 +251,7 @@ public class TypeChecker implements Visitor<Object,Type> {
 		case "*":
 		case "/":
 			if(lhs.typeKind==TypeKind.BOOLEAN||rhs.typeKind==TypeKind.BOOLEAN){
-				reporter.reportError("*** Type Check Error: cannot use an int with || or &&. Position: "+expr.posn);
+				reporter.reportError("*** Type Check Error: cannot perform arithmetic (+,-,*,/) with integers and booleans. Position: "+expr.posn);
 				return genError;
 			}
 			if(checkTypeEquivalence(lhs, rhs, expr.posn)){
@@ -315,7 +315,8 @@ public class TypeChecker implements Visitor<Object,Type> {
 		 
 		Type toReturn=null;
 		Type e=ref.indexExpr.visit(this,null);
-		Type r = ref.idRef.visit(this, arg);
+		Type h = ref.idRef.visit(this, arg);
+		Type r = ((ArrayType)h).eltType;
 		if(e.typeKind!=TypeKind.INT){
 			toReturn=genError;
 			reporter.reportError("*** Type Checking Error: Cannot have a "+e.typeKind+" as an index! Position: "+ref.indexExpr.posn);
