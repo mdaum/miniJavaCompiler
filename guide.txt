@@ -1,0 +1,29 @@
+
+Comp 520 Project Maxwell Daum
+
+Scope:
+	-due to time constraints with my other project-based cs courses I only had time to
+	polish up the basic compiler. No known limitations with my implementation.
+
+
+AST Changelog:
+
+    -added nullLiteral.java
+    -added visitNullLiteral to Visitor interface
+    -updated ASTDisplay to reflect this
+
+   - Declaration attributes added to Identifier and Reference
+
+    -added SourcePosition to Identifier for better Error Reporting
+    -added isArrayLength bool to FieldDecl for easier checking of edge case
+    -added RuntimeEntity entity to Declaration.java for codeGen
+	
+Test Description:
+	-Most of my testing was pretty much mutating existing test cases provided from previous
+	checkpoints, since this was case specific in hindsight I should of held on to these mutations
+	for regression purposes. However, I overwrote the one test my compiler spammed on each part for most of this project.
+	For simply testing functionality within the classroom server I have included the pa4 tests
+	as well as the failure tests from previous regression sets...
+
+
+
